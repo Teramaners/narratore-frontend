@@ -133,7 +133,9 @@ export default function Home() {
     setError("");
   };
 
+  // Funzione adattatore per caricare i sogni dal database o dall'interfaccia
   const caricaSogno = (sognoSalvato: any) => {
+    console.log("Caricamento sogno:", sognoSalvato);
     // Se viene dai componenti UI, usa testo e racconto
     if (sognoSalvato.testo) {
       setSogno(sognoSalvato.testo);
