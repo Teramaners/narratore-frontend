@@ -1,4 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
+import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -13,14 +14,15 @@ function ProtectedRoute({ component: Component, ...rest }: { component: React.Co
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
 
-  // Reindirizza alla pagina di login se l'utente non è autenticato
-  if (!loading && !user) {
-    navigate('/auth');
-    return null;
-  }
+  // Usa useEffect per la navigazione
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [loading, user, navigate]);
 
-  // Mostra un loader durante il controllo dell'autenticazione
-  if (loading) {
+  // Mostra un loader durante il controllo dell'autenticazione o se non autenticato
+  if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-900 to-purple-900 dark:from-indigo-900 dark:to-purple-900 light:from-blue-100 light:to-purple-100">
         <div className="text-center">

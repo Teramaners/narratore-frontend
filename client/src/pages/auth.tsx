@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Moon } from 'lucide-react';
 import { LoginForm } from '@/components/login-form';
 import { RegisterForm } from '@/components/register-form';
@@ -9,8 +9,16 @@ import { useLocation } from 'wouter';
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const { user, loading } = useAuth();
+  const [, navigate] = useLocation();
+  
+  // Effetto per reindirizzare quando l'utente è autenticato
+  useEffect(() => {
+    if (user && !loading) {
+      navigate("/");
+    }
+  }, [user, loading, navigate]);
 
-  if (loading) {
+  if (loading || user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-900 to-purple-900 dark:from-indigo-900 dark:to-purple-900 light:from-blue-100 light:to-purple-100">
         <div className="text-center">
@@ -19,13 +27,6 @@ export default function Auth() {
         </div>
       </div>
     );
-  }
-
-  // Reindirizza alla home se l'utente è già autenticato
-  const [, navigate] = useLocation();
-  if (user) {
-    navigate("/");
-    return null;
   }
 
   return (
