@@ -1,10 +1,75 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import ConnectPgSimple from "connect-pg-simple";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from "./storage";
+import { pool } from "./db";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Configura la sessione con PostgreSQL
+const PgSession = ConnectPgSimple(session);
+app.use(
+  session({
+    store: new PgSession({
+      pool,
+      tableName: "session", // Nome della tabella di sessione
+      createTableIfMissing: true, // Crea automaticamente la tabella se mancante
+    }),
+    secret: process.env.SESSION_SECRET || "sogni-segreti",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 giorni
+      secure: process.env.NODE_ENV === "production",
+    },
+  })
+);
+
+// Configura Passport.js per l'autenticazione
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Strategia di autenticazione locale
+passport.use(
+  new LocalStrategy(async (username, password, done) => {
+    try {
+      const user = await storage.getUserByUsername(username);
+      
+      if (!user) {
+        return done(null, false, { message: "Username non trovato" });
+      }
+      
+      // In una vera applicazione, dovresti usare bcrypt per verificare la password
+      if (user.password !== password) {
+        return done(null, false, { message: "Password non corretta" });
+      }
+      
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  })
+);
+
+// Serializzazione e deserializzazione dell'utente
+passport.serializeUser((user: any, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id: number, done) => {
+  try {
+    const user = await storage.getUser(id);
+    done(null, user);
+  } catch (err) {
+    done(err);
+  }
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
