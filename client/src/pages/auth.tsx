@@ -4,7 +4,7 @@ import { LoginForm } from '@/components/login-form';
 import { RegisterForm } from '@/components/register-form';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useAuth } from '@/lib/authContext';
-import { Navigate } from 'wouter';
+import { useLocation } from 'wouter';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,8 +21,11 @@ export default function Auth() {
     );
   }
 
+  // Reindirizza alla home se l'utente è già autenticato
+  const [, navigate] = useLocation();
   if (user) {
-    return <Navigate to="/" />;
+    navigate("/");
+    return null;
   }
 
   return (

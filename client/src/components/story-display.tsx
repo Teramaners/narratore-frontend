@@ -1,75 +1,62 @@
-import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Copy } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Copy, Check } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface StoryDisplayProps {
   story: string;
 }
 
 export function StoryDisplay({ story }: StoryDisplayProps) {
-  const [isCopied, setIsCopied] = useState(false);
-  
-  const copyToClipboard = () => {
-    if (!story) return;
-    
-    navigator.clipboard.writeText(story)
-      .then(() => {
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-      })
-      .catch(err => console.error('Failed to copy text:', err));
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(story);
+      setCopied(true);
+      toast({
+        description: "Storia copiata negli appunti",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        description: "Impossibile copiare il testo",
+      });
+    }
   };
-  
+
   if (!story) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center p-6 rounded-lg border-2 border-dashed dark:border-indigo-700 dark:text-purple-300 light:border-indigo-200 light:text-indigo-400">
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          className="h-16 w-16 mb-4 opacity-50"
-        >
-          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-        </svg>
-        <p className="text-center">
-          Inserisci il tuo sogno e clicca "Elabora" per vedere il racconto generato da Claude
-        </p>
-      </div>
-    );
+    return null;
   }
-  
+
   return (
-    <Card className="h-full dark:bg-indigo-800 dark:bg-opacity-50 dark:border-l-4 dark:border-purple-500 light:bg-white light:border-l-4 light:border-indigo-500 border-none shadow-lg">
-      <CardContent className="p-4 md:p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold dark:text-purple-200 light:text-indigo-700">
-            Il Tuo Racconto
-          </h2>
-          <Button
-            onClick={copyToClipboard}
-            variant="ghost"
-            className="flex items-center px-3 py-1 rounded text-sm dark:bg-purple-700 dark:text-purple-200 light:bg-indigo-100 light:text-indigo-700 hover:opacity-80 transition-opacity"
-          >
-            {isCopied ? (
-              "Copiato!"
-            ) : (
-              <>
-                <Copy className="h-3 w-3 mr-1" />
-                Copia
-              </>
-            )}
-          </Button>
-        </div>
-        
-        <div className="prose dark:prose-invert light:prose max-w-none">
-          <p className="whitespace-pre-wrap leading-relaxed dark:text-purple-100 light:text-gray-700 font-serif">
-            {story}
-          </p>
+    <Card className="w-full mt-6 dark:bg-slate-900/60 light:bg-white/90 backdrop-blur-sm">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-lg font-semibold">
+          La tua storia
+        </CardTitle>
+        <Button
+          onClick={copyToClipboard}
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          aria-label="Copia negli appunti"
+        >
+          {copied ? (
+            <Check className="h-4 w-4 text-green-500" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <div className="prose dark:prose-invert max-w-none">
+          {story.split('\n').map((paragraph, i) => (
+            paragraph ? <p key={i}>{paragraph}</p> : <br key={i} />
+          ))}
         </div>
       </CardContent>
     </Card>

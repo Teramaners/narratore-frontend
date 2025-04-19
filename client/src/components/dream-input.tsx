@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle, RefreshCw, Send } from 'lucide-react';
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Send, Undo2 } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DreamInputProps {
   onSubmit: (dream: string) => Promise<void>;
@@ -19,63 +19,67 @@ export function DreamInput({
   loading,
   error,
   currentDream,
-  setCurrentDream
+  setCurrentDream,
 }: DreamInputProps) {
-  const handleSubmit = async () => {
-    await onSubmit(currentDream);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (currentDream.trim()) {
+      onSubmit(currentDream);
+    }
   };
 
   return (
-    <Card className="bg-indigo-800 bg-opacity-50 dark:bg-indigo-800 dark:bg-opacity-50 light:bg-white border-none shadow-lg">
-      <CardContent className="p-4 md:p-6">
-        <h2 className="text-xl font-semibold mb-4 text-purple-200 dark:text-purple-200 light:text-indigo-700 flex items-center">
-          <Send className="h-5 w-5 mr-2" />
+    <Card className="w-full dark:bg-slate-900/60 light:bg-white/90 backdrop-blur-sm">
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold">
           Racconta il tuo sogno
-        </h2>
-        
-        <Textarea
-          placeholder="Descrivimi il tuo sogno nei dettagli..."
-          className="w-full h-40 p-3 rounded border dark:bg-indigo-900 dark:border-purple-700 dark:text-purple-100 dark:focus:ring dark:focus:ring-opacity-50 dark:focus:ring-purple-500 light:bg-indigo-50 light:border-indigo-200 light:text-gray-800"
-          value={currentDream}
-          onChange={(e) => setCurrentDream(e.target.value)}
-        />
-        
-        {error && (
-          <div className="mt-2 text-red-400 text-sm flex items-center">
-            <AlertCircle className="h-4 w-4 mr-1" />
-            {error}
-          </div>
-        )}
-        
-        <div className="mt-4 flex gap-2">
-          <Button
-            onClick={handleSubmit}
+        </CardTitle>
+      </CardHeader>
+      <form onSubmit={handleSubmit}>
+        <CardContent>
+          <Textarea
+            placeholder="Descrivi il tuo sogno in dettaglio..."
+            className="min-h-[120px] dark:bg-slate-800/70 light:bg-white/70"
+            value={currentDream}
+            onChange={(e) => setCurrentDream(e.target.value)}
             disabled={loading}
-            className="px-4 py-2 rounded flex items-center justify-center dark:bg-purple-600 dark:hover:bg-purple-700 light:bg-indigo-600 light:hover:bg-indigo-700 text-white flex-grow transition-colors"
+          />
+          {error && (
+            <Alert variant="destructive" className="mt-2">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onReset}
+            disabled={loading || !currentDream}
+          >
+            <Undo2 className="mr-2 h-4 w-4" />
+            Cancella
+          </Button>
+          <Button
+            type="submit"
+            className="dark:bg-purple-600 dark:hover:bg-purple-700"
+            disabled={loading || !currentDream.trim()}
           >
             {loading ? (
-              <span className="flex items-center">
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Elaborazione...
-              </span>
+              <>
+                <div className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-white rounded-full" />
+                Generando...
+              </>
             ) : (
               <>
-                <Send className="h-4 w-4 mr-2" />
-                Elabora il sogno
+                <Send className="mr-2 h-4 w-4" />
+                Genera storia
               </>
             )}
           </Button>
-          
-          <Button
-            onClick={onReset}
-            disabled={loading}
-            className="px-4 py-2 rounded dark:bg-indigo-700 dark:text-purple-200 light:bg-gray-200 light:text-gray-700 hover:opacity-80 transition-opacity"
-            variant="secondary"
-          >
-            Cancella
-          </Button>
-        </div>
-      </CardContent>
+        </CardFooter>
+      </form>
     </Card>
   );
 }

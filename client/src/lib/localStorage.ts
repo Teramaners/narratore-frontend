@@ -5,44 +5,53 @@ export interface SavedDream {
   data: string;
 }
 
-const STORAGE_KEY = 'sogniSalvati';
-
+/**
+ * Ottiene i sogni salvati nel localStorage
+ */
 export function getSavedDreams(): SavedDream[] {
   try {
-    const savedDreams = localStorage.getItem(STORAGE_KEY);
-    return savedDreams ? JSON.parse(savedDreams) : [];
+    const dreamsString = localStorage.getItem('dreams');
+    return dreamsString ? JSON.parse(dreamsString) : [];
   } catch (error) {
-    console.error('Error retrieving saved dreams:', error);
+    console.error('Errore nel recupero dei sogni dal localStorage:', error);
     return [];
   }
 }
 
+/**
+ * Salva un sogno nel localStorage
+ */
 export function saveDream(dream: SavedDream): SavedDream[] {
   try {
-    const savedDreams = getSavedDreams();
-    const updatedDreams = [dream, ...savedDreams].slice(0, 10); // Keep only the last 10 dreams
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDreams));
-    return updatedDreams;
+    const dreams = getSavedDreams();
+    // Verifica se il sogno esiste già e lo aggiorna, altrimenti lo aggiunge
+    const existingDreamIndex = dreams.findIndex(d => d.id === dream.id);
+    
+    if (existingDreamIndex >= 0) {
+      dreams[existingDreamIndex] = dream;
+    } else {
+      dreams.push(dream);
+    }
+    
+    localStorage.setItem('dreams', JSON.stringify(dreams));
+    return dreams;
   } catch (error) {
-    console.error('Error saving dream:', error);
+    console.error('Errore nel salvataggio del sogno nel localStorage:', error);
     return getSavedDreams();
   }
 }
 
+/**
+ * Rimuove un sogno dal localStorage
+ */
 export function removeDream(id: number): SavedDream[] {
   try {
-    const savedDreams = getSavedDreams();
-    const updatedDreams = savedDreams.filter(dream => dream.id !== id);
-    
-    if (updatedDreams.length === 0) {
-      localStorage.removeItem(STORAGE_KEY);
-    } else {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDreams));
-    }
-    
-    return updatedDreams;
+    let dreams = getSavedDreams();
+    dreams = dreams.filter(dream => dream.id !== id);
+    localStorage.setItem('dreams', JSON.stringify(dreams));
+    return dreams;
   } catch (error) {
-    console.error('Error removing dream:', error);
+    console.error('Errore nella rimozione del sogno dal localStorage:', error);
     return getSavedDreams();
   }
 }
