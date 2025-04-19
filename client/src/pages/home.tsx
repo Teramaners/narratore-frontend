@@ -26,9 +26,9 @@ export default function Home() {
     isLoading: isLoadingSogni,
     refetch: refetchSogni
   } = useQuery({
-    queryKey: ['/api/dreams'],
+    queryKey: ['/api/sogni'],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/dreams');
+      const response = await apiRequest('GET', '/api/sogni');
       return response.json();
     },
     enabled: !!user
@@ -37,11 +37,11 @@ export default function Home() {
   // Mutation per salvare un nuovo sogno
   const saveDreamMutation = useMutation({
     mutationFn: async (newDream: { testo: string, racconto: string }) => {
-      const response = await apiRequest('POST', '/api/dreams', newDream);
+      const response = await apiRequest('POST', '/api/sogni', newDream);
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/dreams'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/sogni'] });
       toast({
         description: 'Sogno salvato con successo',
       });
@@ -57,10 +57,10 @@ export default function Home() {
   // Mutation per eliminare un sogno
   const deleteDreamMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest('DELETE', `/api/dreams/${id}`);
+      await apiRequest('DELETE', `/api/sogni/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/dreams'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/sogni'] });
       toast({
         description: 'Sogno eliminato con successo',
       });
