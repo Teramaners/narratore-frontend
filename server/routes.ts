@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateStoryFromDream } from "./anthropic";
+import { generateStoryFromDream } from "./gemini";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dream to story generation endpoint
