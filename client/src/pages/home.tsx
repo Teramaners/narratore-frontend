@@ -37,7 +37,11 @@ export default function Home() {
   // Mutation per salvare un nuovo sogno
   const saveDreamMutation = useMutation({
     mutationFn: async (newDream: { testo: string, racconto: string }) => {
-      const response = await apiRequest('POST', '/api/sogni', newDream);
+      // Converti i nomi dei campi da italiano a inglese per il database
+      const response = await apiRequest('POST', '/api/sogni', {
+        content: newDream.testo,    // 'content' nel database invece di 'testo'
+        story: newDream.racconto    // 'story' nel database invece di 'racconto'
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -130,8 +134,16 @@ export default function Home() {
   };
 
   const caricaSogno = (sognoSalvato: any) => {
-    setSogno(sognoSalvato.testo);
-    setRacconto(sognoSalvato.racconto);
+    // Se viene dai componenti UI, usa testo e racconto
+    if (sognoSalvato.testo) {
+      setSogno(sognoSalvato.testo);
+      setRacconto(sognoSalvato.racconto);
+    } 
+    // Se viene dal database, mappa content a testo e story a racconto
+    else if (sognoSalvato.content) {
+      setSogno(sognoSalvato.content);
+      setRacconto(sognoSalvato.story);
+    }
   };
 
   const eliminaSogno = (id: number) => {
