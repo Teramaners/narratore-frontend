@@ -32,7 +32,7 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     this.sessionStore = new PostgresSessionStore({
       pool,
-      tableName: 'sessions',
+      tableName: 'user_sessions', // Nome modificato per evitare conflitti
       createTableIfMissing: true
     });
   }
