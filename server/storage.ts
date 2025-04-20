@@ -1,9 +1,17 @@
 import { users, dreams, type User, type InsertUser, type Dream, type InsertDream } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
+
+const PostgresSessionStore = connectPg(session);
 
 // Interfaccia di storage estesa con metodi per i sogni
 export interface IStorage {
+  // Store di sessione
+  sessionStore: session.Store;
+  
   // Metodi per gli utenti
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -19,6 +27,16 @@ export interface IStorage {
 
 // Implementazione con database PostgreSQL
 export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+  
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      tableName: 'sessions',
+      createTableIfMissing: true
+    });
+  }
+  
   // Metodi per gli utenti
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));

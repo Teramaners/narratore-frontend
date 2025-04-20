@@ -1,113 +1,90 @@
-import { useState } from 'react';
-import { useAuth } from '@/lib/authContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { LoginCredentials } from '@/lib/auth';
+import { useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 interface LoginFormProps {
   onRegisterClick: () => void;
 }
 
 export function LoginForm({ onRegisterClick }: LoginFormProps) {
-  const [credentials, setCredentials] = useState<LoginCredentials>({
-    username: '',
-    password: ''
-  });
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const { login } = useAuth();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const { loginMutation } = useAuth();
   const { toast } = useToast();
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setCredentials((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoggingIn(true);
-
-    try {
-      await login(credentials);
+    
+    if (!username || !password) {
       toast({
-        title: 'Accesso effettuato',
-        description: 'Hai effettuato l\'accesso con successo.',
-        variant: 'default'
+        title: "Campi mancanti",
+        description: "Per favore compila tutti i campi",
+        variant: "destructive",
       });
-    } catch (error: any) {
-      toast({
-        title: 'Errore di accesso',
-        description: error.message || 'Si è verificato un errore durante l\'accesso.',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsLoggingIn(false);
+      return;
     }
+    
+    loginMutation.mutate({ username, password });
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto dark:bg-slate-900/60 light:bg-white/90 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="text-center">Accedi</CardTitle>
-        <CardDescription className="text-center">
-          Inserisci le tue credenziali per accedere al tuo account
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="username" className="block text-sm font-medium">
-              Username
-            </label>
-            <Input
-              id="username"
-              name="username"
-              type="text"
-              required
-              value={credentials.username}
-              onChange={handleInputChange}
-              className="w-full"
-              placeholder="Il tuo username"
-            />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="password" className="block text-sm font-medium">
-              Password
-            </label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              required
-              value={credentials.password}
-              onChange={handleInputChange}
-              className="w-full"
-              placeholder="La tua password"
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-2">
-          <Button 
-            type="submit" 
-            className="w-full dark:bg-purple-600 dark:hover:bg-purple-700"
-            disabled={isLoggingIn}
-          >
-            {isLoggingIn ? 'Accesso in corso...' : 'Accedi'}
-          </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            className="w-full"
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="username">Nome utente</Label>
+        <Input
+          id="username"
+          placeholder="Il tuo nome utente"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          type="password"
+          placeholder="La tua password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </div>
+      
+      <Button 
+        type="submit" 
+        className="w-full" 
+        disabled={loginMutation.isPending}
+      >
+        {loginMutation.isPending ? (
+          <span className="flex items-center">
+            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Accesso in corso...
+          </span>
+        ) : (
+          "Accedi"
+        )}
+      </Button>
+      
+      <div className="text-center">
+        <p className="text-sm dark:text-gray-400">
+          Non hai un account?{" "}
+          <button
+            type="button"
             onClick={onRegisterClick}
+            className="text-primary hover:underline"
           >
-            Non hai un account? Registrati
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+            Registrati
+          </button>
+        </p>
+      </div>
+    </form>
   );
 }

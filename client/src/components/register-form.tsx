@@ -1,140 +1,115 @@
-import { useState } from 'react';
-import { useAuth } from '@/lib/authContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { RegisterCredentials } from '@/lib/auth';
+import { useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 interface RegisterFormProps {
   onLoginClick: () => void;
 }
 
 export function RegisterForm({ onLoginClick }: RegisterFormProps) {
-  const [credentials, setCredentials] = useState<RegisterCredentials>({
-    username: '',
-    password: '',
-    confirmPassword: ''
-  });
-  const [isRegistering, setIsRegistering] = useState(false);
-  const { register } = useAuth();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const { registerMutation } = useAuth();
   const { toast } = useToast();
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setCredentials((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsRegistering(true);
-
-    // Verifica che le password corrispondano
-    if (credentials.password !== credentials.confirmPassword) {
+    
+    if (!username || !password || !confirmPassword) {
       toast({
-        title: 'Errore di validazione',
-        description: 'Le password non corrispondono.',
-        variant: 'destructive'
+        title: "Campi mancanti",
+        description: "Per favore compila tutti i campi",
+        variant: "destructive",
       });
-      setIsRegistering(false);
       return;
     }
-
-    try {
-      await register(credentials);
+    
+    if (password !== confirmPassword) {
       toast({
-        title: 'Registrazione completata',
-        description: 'Il tuo account è stato creato con successo.',
-        variant: 'default'
+        title: "Le password non corrispondono",
+        description: "Assicurati che le password inserite siano identiche",
+        variant: "destructive",
       });
-    } catch (error: any) {
-      toast({
-        title: 'Errore di registrazione',
-        description: error.message || 'Si è verificato un errore durante la registrazione.',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsRegistering(false);
+      return;
     }
+    
+    registerMutation.mutate({ 
+      username, 
+      password,
+    });
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto dark:bg-slate-900/60 light:bg-white/90 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="text-center">Registrazione</CardTitle>
-        <CardDescription className="text-center">
-          Crea un nuovo account per salvare i tuoi sogni
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="username" className="block text-sm font-medium">
-              Username
-            </label>
-            <Input
-              id="username"
-              name="username"
-              type="text"
-              required
-              value={credentials.username}
-              onChange={handleInputChange}
-              className="w-full"
-              placeholder="Scegli un username"
-            />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="password" className="block text-sm font-medium">
-              Password
-            </label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              required
-              value={credentials.password}
-              onChange={handleInputChange}
-              className="w-full"
-              placeholder="Crea una password"
-            />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="confirmPassword" className="block text-sm font-medium">
-              Conferma Password
-            </label>
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              required
-              value={credentials.confirmPassword}
-              onChange={handleInputChange}
-              className="w-full"
-              placeholder="Ripeti la password"
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-2">
-          <Button 
-            type="submit" 
-            className="w-full dark:bg-purple-600 dark:hover:bg-purple-700"
-            disabled={isRegistering}
-          >
-            {isRegistering ? 'Registrazione in corso...' : 'Registrati'}
-          </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            className="w-full"
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="username">Nome utente</Label>
+        <Input
+          id="username"
+          placeholder="Scegli un nome utente"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          type="password"
+          placeholder="Scegli una password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">Conferma password</Label>
+        <Input
+          id="confirmPassword"
+          type="password"
+          placeholder="Conferma la tua password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+        />
+      </div>
+      
+      <Button 
+        type="submit" 
+        className="w-full" 
+        disabled={registerMutation.isPending}
+      >
+        {registerMutation.isPending ? (
+          <span className="flex items-center">
+            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Registrazione in corso...
+          </span>
+        ) : (
+          "Registrati"
+        )}
+      </Button>
+      
+      <div className="text-center">
+        <p className="text-sm dark:text-gray-400">
+          Hai già un account?{" "}
+          <button
+            type="button"
             onClick={onLoginClick}
+            className="text-primary hover:underline"
           >
-            Hai già un account? Accedi
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+            Accedi
+          </button>
+        </p>
+      </div>
+    </form>
   );
 }
