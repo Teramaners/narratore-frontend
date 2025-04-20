@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { fallbackDreamSymbols, getFallbackExtractedSymbols } from './dream-symbols-fallback';
 
 interface DreamSymbolResponse {
   symbol: string;
@@ -22,7 +23,8 @@ interface DreamSymbolsResponse {
 export async function extractDreamSymbols(dreamText: string): Promise<DreamSymbolsResponse> {
   try {
     if (!process.env.GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY non trovata. Configura la tua chiave API Gemini.');
+      console.log('GEMINI_API_KEY non trovata, utilizzo dati di fallback');
+      return getFallbackExtractedSymbols(dreamText);
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -49,30 +51,63 @@ export async function extractDreamSymbols(dreamText: string): Promise<DreamSymbo
     Limita la risposta a massimo 7 simboli, selezionando quelli più significativi.
     `;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
-    
-    // Estrai il JSON dalla risposta
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Formato di risposta non valido');
+    try {
+      const result = await model.generateContent(prompt);
+      const responseText = result.response.text();
+      
+      // Estrai il JSON dalla risposta
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Formato di risposta non valido');
+      }
+      
+      const parsedResponse = JSON.parse(jsonMatch[0]) as DreamSymbolsResponse;
+      return parsedResponse;
+    } catch (apiError) {
+      // Se l'API fallisce (es. quota superata), utilizza i dati di fallback
+      console.log('API Gemini non disponibile, utilizzo dati di fallback');
+      return getFallbackExtractedSymbols(dreamText);
     }
-    
-    const parsedResponse = JSON.parse(jsonMatch[0]) as DreamSymbolsResponse;
-    return parsedResponse;
   } catch (error) {
     console.error('Errore nell\'estrazione dei simboli del sogno:', error);
-    return {
-      mainSymbols: []
-    };
+    // Utilizza i dati di fallback in caso di errore
+    return getFallbackExtractedSymbols(dreamText);
   }
 }
 
 // Ottiene informazioni dettagliate su un simbolo specifico
 export async function getDreamSymbolInfo(symbol: string): Promise<DreamSymbolResponse> {
   try {
+    // Controlla se il simbolo è presente nei dati di fallback
+    // Normalizza il simbolo rimuovendo maiuscole e spazi
+    const normalizedSymbol = symbol.toLowerCase().trim();
+    
+    // Cerca nei dati di fallback
+    for (const key in fallbackDreamSymbols) {
+      const fallbackSymbol = fallbackDreamSymbols[key as keyof typeof fallbackDreamSymbols];
+      if (fallbackSymbol.symbol.toLowerCase() === normalizedSymbol) {
+        console.log(`Simbolo "${symbol}" trovato nei dati di fallback`);
+        return fallbackSymbol;
+      }
+    }
+    
+    // Se non è trovato nei dati di fallback, prova con l'API
     if (!process.env.GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY non trovata. Configura la tua chiave API Gemini.');
+      console.log('GEMINI_API_KEY non trovata, utilizzando risposta generica');
+      return {
+        symbol,
+        meanings: {
+          general: `Il simbolo "${symbol}" rappresenta concetti e significati che variano in base al contesto personale e culturale.`,
+          psychological: `Nella psicologia dei sogni, "${symbol}" può rappresentare aspetti della tua psiche o esperienze emotive.`,
+          cultural: [
+            `In molte culture occidentali, "${symbol}" è associato a concetti di trasformazione e cambiamento.`,
+            `Nelle tradizioni orientali, potrebbe simboleggiare equilibrio o armonia.`,
+            `In varie mitologie, questo simbolo appare come rappresentazione di forze naturali o divine.`
+          ]
+        },
+        relatedSymbols: ["Oggetto", "Concetto", "Immagine"],
+        categories: ["Generale", "Simboli"]
+      };
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -101,28 +136,47 @@ export async function getDreamSymbolInfo(symbol: string): Promise<DreamSymbolRes
     }
     `;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
-    
-    // Estrai il JSON dalla risposta
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Formato di risposta non valido');
+    try {
+      const result = await model.generateContent(prompt);
+      const responseText = result.response.text();
+      
+      // Estrai il JSON dalla risposta
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Formato di risposta non valido');
+      }
+      
+      const parsedResponse = JSON.parse(jsonMatch[0]) as DreamSymbolResponse;
+      return parsedResponse;
+    } catch (apiError) {
+      // Se l'API fallisce (es. quota superata), fornisci una risposta generica
+      console.log('API Gemini non disponibile, fornendo risposta generica');
+      return {
+        symbol,
+        meanings: {
+          general: `Il simbolo "${symbol}" rappresenta concetti e significati che variano in base al contesto personale e culturale.`,
+          psychological: `Nella psicologia dei sogni, "${symbol}" può rappresentare aspetti della tua psiche o esperienze emotive.`,
+          cultural: [
+            `In molte culture occidentali, "${symbol}" è associato a concetti di trasformazione e cambiamento.`,
+            `Nelle tradizioni orientali, potrebbe simboleggiare equilibrio o armonia.`,
+            `In varie mitologie, questo simbolo appare come rappresentazione di forze naturali o divine.`
+          ]
+        },
+        relatedSymbols: ["Oggetto", "Concetto", "Immagine"],
+        categories: ["Generale", "Simboli"]
+      };
     }
-    
-    const parsedResponse = JSON.parse(jsonMatch[0]) as DreamSymbolResponse;
-    return parsedResponse;
   } catch (error) {
     console.error('Errore nel recupero delle informazioni sul simbolo:', error);
     return {
       symbol,
       meanings: {
-        general: 'Informazioni non disponibili',
-        psychological: 'Informazioni non disponibili',
-        cultural: ['Informazioni non disponibili']
+        general: `Il simbolo "${symbol}" rappresenta concetti che variano in base al contesto personale.`,
+        psychological: `Nella psicologia dei sogni, "${symbol}" può rappresentare diversi aspetti della psiche.`,
+        cultural: ['Le interpretazioni variano significativamente tra diverse culture.']
       },
-      relatedSymbols: [],
-      categories: []
+      relatedSymbols: ["Concetto", "Immagine"],
+      categories: ["Generale"]
     };
   }
 }
