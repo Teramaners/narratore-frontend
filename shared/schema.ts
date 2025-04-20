@@ -35,6 +35,7 @@ export const dreams = pgTable("dreams", {
   soundtrack: text("soundtrack"), // Tema musicale associato al sogno
   soundMood: text("sound_mood"), // Umore musicale (allegro, misterioso, inquietante, ecc.)
   emojiTranslation: text("emoji_translation"), // Traduzione del sogno in emoji
+  dreamImageUrl: text("dream_image_url"), // URL dell'immagine generata per il sogno
   interpretation: text("interpretation"), // Interpretazione del sogno fornita dall'AI
   symbolism: text("symbolism"), // Simbolismo presente nel sogno identificato dall'AI
   insight: text("insight"), // Approfondimento psicologico sul sogno
@@ -58,6 +59,7 @@ export const insertDreamSchema = createInsertSchema(dreams).pick({
   soundtrack: true,
   soundMood: true,
   emojiTranslation: true,
+  dreamImageUrl: true,
   interpretation: true,
   symbolism: true,
   insight: true,

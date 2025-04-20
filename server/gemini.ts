@@ -1,4 +1,10 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import fetch from 'node-fetch';
+import { createHash } from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { v4 as uuidv4 } from 'uuid';
 
 // Inizializza il client Google Generative AI con l'API key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "default_key");
@@ -9,6 +15,10 @@ interface StoryResponse {
 
 interface EmojiResponse {
   emojiTranslation: string;
+}
+
+interface ImageResponse {
+  imageUrl: string;
 }
 
 export async function generateStoryFromDream(dream: string): Promise<StoryResponse> {
@@ -55,4 +65,102 @@ export async function generateEmojiTranslation(dream: string): Promise<EmojiResp
   } catch (error: any) {
     throw new Error(`Gemini API error: ${error?.message || 'Unknown error'}`);
   }
+}
+
+export async function generateImageFromDream(dream: string, story: string): Promise<ImageResponse> {
+  try {
+    // Utilizziamo il modello gemini-1.5-pro-latest per generare la descrizione dell'immagine
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+    
+    // Prima creiamo una descrizione dettagliata per l'immagine basata sul sogno
+    const imagePrompt = `
+      Crea una descrizione dettagliata per un'immagine surreale e artistica che rappresenti questo sogno:
+      "${dream}"
+      
+      Il racconto generato da questo sogno è:
+      "${story.slice(0, 300)}..."
+      
+      La descrizione deve essere molto dettagliata, specifica e visiva, adatta per un generatore di immagini.
+      Concentrati su: scena principale, colori, atmosfera, elementi simbolici, stile artistico (come surrealismo, fantasy, impressionismo).
+      La descrizione deve essere in inglese per ottenere risultati migliori e lunga circa 100-150 parole.
+    `;
+    
+    const descriptionResult = await model.generateContent(imagePrompt);
+    const imageDescription = descriptionResult.response.text().trim();
+    
+    // Ora utilizziamo Stable Diffusion API per generare l'immagine
+    // Note: Per questa demo, genereremo SVG al posto di usare API esterne
+    const svgImage = generateSvgImageForDream(dream, imageDescription);
+    
+    // Creiamo un ID univoco per l'immagine
+    const imageId = uuidv4();
+    const imageUrl = `/api/dream-images/${imageId}.svg`;
+    
+    // Salviamo l'SVG in una directory pubblica
+    const imagesDir = path.resolve('./public/dream-images');
+    if (!fs.existsSync(imagesDir)) {
+      fs.mkdirSync(imagesDir, { recursive: true });
+    }
+    
+    fs.writeFileSync(path.join(imagesDir, `${imageId}.svg`), svgImage);
+    
+    return { imageUrl };
+  } catch (error: any) {
+    console.error("Error generating image from dream:", error);
+    throw new Error(`Failed to generate image: ${error.message}`);
+  }
+}
+
+// Funzione per generare SVG artistico basato sul sogno
+function generateSvgImageForDream(dream: string, description: string): string {
+  // Creiamo un hash dal sogno per ottenere valori pseudo-casuali ma consistenti
+  const hash = createHash('md5').update(dream).digest('hex');
+  
+  // Estraiamo valori dal hash per generare colori e forme
+  const r1 = parseInt(hash.substr(0, 2), 16);
+  const g1 = parseInt(hash.substr(2, 2), 16);
+  const b1 = parseInt(hash.substr(4, 2), 16);
+  const r2 = parseInt(hash.substr(6, 2), 16);
+  const g2 = parseInt(hash.substr(8, 2), 16);
+  const b2 = parseInt(hash.substr(10, 2), 16);
+  
+  const color1 = `rgb(${r1}, ${g1}, ${b1})`;
+  const color2 = `rgb(${r2}, ${g2}, ${b2})`;
+  
+  // Generiamo formes e percorsi casuali basati sul hash
+  const elements = [];
+  for (let i = 0; i < 5; i++) {
+    const x = parseInt(hash.substr(i*2, 2), 16) % 300;
+    const y = parseInt(hash.substr(i*2+1, 2), 16) % 300;
+    const radius = (parseInt(hash.substr(i*4, 2), 16) % 50) + 20;
+    
+    elements.push(`<circle cx="${x}" cy="${y}" r="${radius}" fill="rgba(${r1}, ${g1}, ${b1}, 0.5)" />`);
+  }
+  
+  // Aggiungiamo alcune curve Bézier per un effetto artistico
+  for (let i = 0; i < 3; i++) {
+    const x1 = parseInt(hash.substr(i*2, 2), 16) % 300;
+    const y1 = parseInt(hash.substr(i*2+1, 2), 16) % 300;
+    const x2 = parseInt(hash.substr(i*2+2, 2), 16) % 300;
+    const y2 = parseInt(hash.substr(i*2+3, 2), 16) % 300;
+    const x3 = parseInt(hash.substr(i*2+4, 2), 16) % 300;
+    const y3 = parseInt(hash.substr(i*2+5, 2), 16) % 300;
+    
+    elements.push(`<path d="M ${x1} ${y1} Q ${x2} ${y2} ${x3} ${y3}" stroke="rgba(${r2}, ${g2}, ${b2}, 0.7)" stroke-width="3" fill="none" />`);
+  }
+  
+  return `
+    <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="white"/>
+      <defs>
+        <linearGradient id="dreamGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${color1}" />
+          <stop offset="100%" stop-color="${color2}" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#dreamGradient)" />
+      ${elements.join('\n')}
+      <text x="50%" y="95%" font-family="Arial" font-size="12" fill="white" text-anchor="middle">Sogno illustrato con IA</text>
+    </svg>
+  `;
 }

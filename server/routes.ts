@@ -1,10 +1,11 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateStoryFromDream, generateEmojiTranslation } from "./gemini";
+import { generateStoryFromDream, generateEmojiTranslation, generateImageFromDream } from "./gemini";
 import { insertDreamSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
+import path from "path";
 
 // Middleware per proteggere le rotte che richiedono autenticazione
 function isAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -71,6 +72,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         details: error.message 
       });
     }
+  });
+  
+  // Endpoint per la generazione di immagini dai sogni
+  app.post("/api/genera-immagine", async (req, res) => {
+    try {
+      const { sogno, racconto } = req.body;
+      
+      if (!sogno || typeof sogno !== "string" || sogno.trim() === "") {
+        return res.status(400).json({ error: "Il contenuto del sogno è richiesto" });
+      }
+      
+      if (!racconto || typeof racconto !== "string" || racconto.trim() === "") {
+        return res.status(400).json({ error: "Il racconto del sogno è richiesto" });
+      }
+
+      const result = await generateImageFromDream(sogno, racconto);
+      
+      // Restituisce l'URL dell'immagine generata
+      return res.status(200).json({ imageUrl: result.imageUrl });
+    } catch (error: any) {
+      console.error("Error generating dream image:", error);
+      return res.status(500).json({ 
+        error: "Si è verificato un errore nella generazione dell'immagine", 
+        details: error.message 
+      });
+    }
+  });
+  
+  // Serviamo la cartella delle immagini generate
+  app.use('/api/dream-images', (req, res, next) => {
+    const filePath = path.join(__dirname, '..', 'public', 'dream-images', req.path);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        next();
+      }
+    });
   });
   
 
