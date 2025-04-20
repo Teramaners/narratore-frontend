@@ -401,7 +401,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Ottieni l'elenco delle categorie di simboli nei sogni
   app.get("/api/simboli-sogno/categorie", (req, res) => {
-    return res.status(200).json(dreamSymbolCategories);
+    try {
+      return res.status(200).json(dreamSymbolCategories);
+    } catch (error: any) {
+      console.error("Error getting dream symbol categories:", error);
+      return res.status(500).json({ 
+        error: "Si è verificato un errore nel recupero delle categorie dei simboli", 
+        details: error.message 
+      });
+    }
   });
 
   const httpServer = createServer(app);

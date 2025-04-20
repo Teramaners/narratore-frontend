@@ -53,15 +53,25 @@ export function DreamSymbolDictionary({ dreamContent }: DreamSymbolDictionaryPro
   const [openSymbolDialog, setOpenSymbolDialog] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   
-  // Query per ottenere l'elenco delle categorie di simboli
-  const { data: categories, isLoading: categoriesLoading } = useQuery({
-    queryKey: ["/api/simboli-sogno/categorie"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/simboli-sogno/categorie");
-      return await response.json();
-    },
-    staleTime: Infinity,
-  });
+  // Utilizziamo categorie predefinite per motivi di semplicità e prestazioni
+  // invece di chiamare l'API
+  const categories = [
+    "Natura",
+    "Animali",
+    "Persone",
+    "Luoghi",
+    "Oggetti",
+    "Elementi",
+    "Emozioni",
+    "Azioni",
+    "Situazioni",
+    "Spirituale",
+    "Mitologico",
+    "Famiglia",
+    "Lavoro",
+    "Viaggio"
+  ];
+  const categoriesLoading = false;
   
   // Mutazione per estrarre simboli dal testo del sogno
   const extractSymbolsMutation = useMutation({
