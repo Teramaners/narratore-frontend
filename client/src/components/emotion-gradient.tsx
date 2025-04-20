@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { emotionToEnglish, emotionToItalian } from '@/lib/emotions';
 
 interface EmotionGradientProps {
   emotion: string;
@@ -66,19 +67,9 @@ export function EmotionGradient({ emotion, className }: EmotionGradientProps) {
     }
   };
 
-  // Converti l'emozione inglese in italiano per la visualizzazione
+  // Usiamo l'utility per convertire l'emozione da inglese a italiano
   const getEmotionName = (emotion: string) => {
-    switch (emotion) {
-      case 'happy': return 'Felice';
-      case 'sad': return 'Triste';
-      case 'curious': return 'Curioso';
-      case 'scared': return 'Spaventato';
-      case 'excited': return 'Eccitato';
-      case 'confused': return 'Confuso';
-      case 'neutral': 
-      case 'neutro': return 'Neutro';
-      default: return emotion || 'Neutro';
-    }
+    return emotionToItalian(emotion);
   };
 
   // Effetto di animazione del gradiente

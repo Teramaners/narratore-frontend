@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { EmotionGradient } from './emotion-gradient';
+import { emotionToEnglish } from '@/lib/emotions';
 
 interface DreamEntry {
   id: number;
@@ -227,9 +229,9 @@ export function DreamTimeline({ dreams, onSelectDream }: DreamTimelineProps) {
                         <Badge variant="outline" className="capitalize">
                           {getCategoryName(category)}
                         </Badge>
-                        <Badge className={getEmotionColor(emotion)}>
-                          {getEmotionName(emotion)}
-                        </Badge>
+                        <EmotionGradient 
+                          emotion={emotionToEnglish(emotion)}
+                        />
                       </div>
                     </div>
                     
