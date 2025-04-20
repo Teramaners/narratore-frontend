@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Moon, LogOut } from 'lucide-react';
+import { Moon, LogOut, List, Clock } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { DreamInput } from '@/components/dream-input';
 import { DreamList } from '@/components/dream-list';
@@ -7,11 +7,13 @@ import { StoryDisplay } from '@/components/story-display';
 import { DreamCategory } from '@/components/dream-category';
 import { DreamSoundtrack } from '@/components/dream-soundtrack';
 import { DreamShare } from '@/components/dream-share';
+import { DreamTimeline } from '@/components/dream-timeline';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SavedDream } from '@/lib/localStorage';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/lib/authContext';
 import { useQuery, useMutation } from '@tanstack/react-query';
 
@@ -262,11 +264,33 @@ export default function Home() {
               setCurrentDream={setSogno}
             />
             
-            <DreamList
-              dreams={sogniSalvati}
-              onDreamSelect={caricaSogno}
-              onDreamDelete={eliminaSogno}
-            />
+            <Tabs defaultValue="list" className="mt-4">
+              <TabsList className="w-full mb-2 dark:bg-gray-800/70 light:bg-gray-100">
+                <TabsTrigger value="list" className="flex-1 dark:data-[state=active]:bg-gray-700 light:data-[state=active]:bg-white">
+                  <List className="h-4 w-4 mr-2" />
+                  Lista
+                </TabsTrigger>
+                <TabsTrigger value="timeline" className="flex-1 dark:data-[state=active]:bg-gray-700 light:data-[state=active]:bg-white">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Timeline
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="list" className="mt-0">
+                <DreamList
+                  dreams={sogniSalvati}
+                  onDreamSelect={caricaSogno}
+                  onDreamDelete={eliminaSogno}
+                />
+              </TabsContent>
+              
+              <TabsContent value="timeline" className="mt-0">
+                <DreamTimeline 
+                  dreams={sogniSalvati}
+                  onSelectDream={caricaSogno}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
           
           {/* Output column */}
