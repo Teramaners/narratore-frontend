@@ -8,6 +8,11 @@ import {
   analyzeEmotionsInDream,
   artStyles 
 } from "./gemini";
+import {
+  extractDreamSymbols,
+  getDreamSymbolInfo,
+  dreamSymbolCategories
+} from "./dream-symbols";
 import { insertDreamSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
@@ -350,6 +355,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Ottieni le reazioni a un sogno
   app.get("/api/sogni/:id/reazioni", async (req, res) => {
     await ChallengeController.getDreamReactions(req, res);
+  });
+
+  // API per il dizionario dei simboli dei sogni
+  
+  // Estrai i simboli principali da un testo di sogno
+  app.post("/api/simboli-sogno/estrai", async (req, res) => {
+    try {
+      const { testo } = req.body;
+      
+      if (!testo || typeof testo !== "string" || testo.trim() === "") {
+        return res.status(400).json({ error: "Il testo del sogno è richiesto" });
+      }
+      
+      const simboli = await extractDreamSymbols(testo);
+      return res.status(200).json(simboli);
+    } catch (error: any) {
+      console.error("Error extracting dream symbols:", error);
+      return res.status(500).json({ 
+        error: "Si è verificato un errore nell'estrazione dei simboli", 
+        details: error.message 
+      });
+    }
+  });
+  
+  // Ottieni informazioni dettagliate su un simbolo specifico
+  app.get("/api/simboli-sogno/:simbolo", async (req, res) => {
+    try {
+      const simbolo = req.params.simbolo;
+      
+      if (!simbolo || simbolo.trim() === "") {
+        return res.status(400).json({ error: "Il nome del simbolo è richiesto" });
+      }
+      
+      const infoSimbolo = await getDreamSymbolInfo(simbolo);
+      return res.status(200).json(infoSimbolo);
+    } catch (error: any) {
+      console.error("Error getting dream symbol info:", error);
+      return res.status(500).json({ 
+        error: "Si è verificato un errore nel recupero delle informazioni sul simbolo", 
+        details: error.message 
+      });
+    }
+  });
+  
+  // Ottieni l'elenco delle categorie di simboli nei sogni
+  app.get("/api/simboli-sogno/categorie", (req, res) => {
+    return res.status(200).json(dreamSymbolCategories);
   });
 
   const httpServer = createServer(app);
