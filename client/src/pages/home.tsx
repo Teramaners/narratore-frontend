@@ -6,6 +6,7 @@ import { DreamList } from '@/components/dream-list';
 import { StoryDisplay } from '@/components/story-display';
 import { DreamCategory } from '@/components/dream-category';
 import { DreamSoundtrack } from '@/components/dream-soundtrack';
+import { DreamShare } from '@/components/dream-share';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SavedDream } from '@/lib/localStorage';
@@ -370,6 +371,12 @@ export default function Home() {
                         });
                       }
                     }}
+                  />
+                  
+                  <DreamShare 
+                    dreamContent={sogno}
+                    dreamStory={racconto}
+                    category={categoria}
                   />
                 </div>
               </>
