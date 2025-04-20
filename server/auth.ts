@@ -22,6 +22,12 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
+  // Verifichiamo che la stored password abbia il formato corretto
+  if (!stored || !stored.includes(".")) {
+    // Se la password è memorizzata in plaintext (caso di test/sviluppo)
+    return supplied === stored;
+  }
+  
   const [hashed, salt] = stored.split(".");
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
