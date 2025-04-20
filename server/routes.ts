@@ -102,9 +102,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Serviamo la cartella delle immagini generate
   app.use('/api/dream-images', (req, res, next) => {
-    const filePath = path.join(__dirname, '..', 'public', 'dream-images', req.path);
+    const filePath = path.resolve('./public/dream-images' + req.path);
     res.sendFile(filePath, (err) => {
       if (err) {
+        console.error('Error serving image:', err);
         next();
       }
     });

@@ -1,0 +1,21 @@
+
+    <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="white"/>
+      <defs>
+        <linearGradient id="dreamGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="rgb(135, 128, 0)" />
+          <stop offset="100%" stop-color="rgb(156, 132, 30)" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#dreamGradient)" />
+      <circle cx="135" cy="120" r="55" fill="rgba(135, 128, 0, 0.5)" />
+<circle cx="128" cy="0" r="20" fill="rgba(135, 128, 0, 0.5)" />
+<circle cx="0" cy="9" r="52" fill="rgba(135, 128, 0, 0.5)" />
+<circle cx="156" cy="200" r="27" fill="rgba(135, 128, 0, 0.5)" />
+<circle cx="132" cy="65" r="63" fill="rgba(135, 128, 0, 0.5)" />
+<path d="M 135 120 Q 128 0 0 9" stroke="rgba(156, 132, 30, 0.7)" stroke-width="3" fill="none" />
+<path d="M 128 0 Q 0 9 156 200" stroke="rgba(156, 132, 30, 0.7)" stroke-width="3" fill="none" />
+<path d="M 0 9 Q 156 200 132 65" stroke="rgba(156, 132, 30, 0.7)" stroke-width="3" fill="none" />
+      <text x="50%" y="95%" font-family="Arial" font-size="12" fill="white" text-anchor="middle">Sogno illustrato con IA</text>
+    </svg>
+  
