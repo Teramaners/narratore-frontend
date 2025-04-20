@@ -142,45 +142,153 @@ export const fallbackDreamSymbols: FallbackDreamSymbols = {
 export function getFallbackExtractedSymbols(dreamText: string) {
   // Lista di parole chiave da cercare nel testo del sogno
   const keywordsToSymbols: {[key: string]: string} = {
+    // Acqua e relativi
     "acqua": "acqua",
     "mare": "acqua",
     "oceano": "acqua",
     "lago": "acqua",
     "fiume": "acqua",
     "pioggia": "acqua",
+    "bagnato": "acqua",
+    "nuotare": "acqua",
+    "tuffo": "acqua",
+    "bagno": "acqua",
+    "goccia": "acqua",
+    "fontana": "acqua",
+    "bere": "acqua",
     
+    // Volare e cielo
     "volare": "volare",
     "volo": "volare",
     "ali": "volare",
     "cielo": "volare",
+    "nuvole": "volare",
+    "uccello": "volare",
+    "aereo": "volare",
+    "alto": "volare",
+    "sorvolare": "volare",
+    "planare": "volare",
+    "fluttuare": "volare",
+    "librarsi": "volare",
     
+    // Casa e luoghi chiusi
     "casa": "casa",
     "appartamento": "casa",
     "edificio": "casa",
     "stanza": "casa",
+    "dimora": "casa",
+    "tetto": "casa",
+    "muro": "casa",
+    "abitazione": "casa",
+    "camera": "casa",
+    "soggiorno": "casa",
+    "cucina": "casa",
+    "bagno": "casa",
+    "porta": "casa",
+    "finestra": "casa",
+    "scale": "casa",
     
+    // Cadere e precipitare
     "cadere": "cadere",
     "caduta": "cadere",
     "precipitare": "cadere",
+    "precipizio": "cadere",
+    "scivolare": "cadere",
+    "inciampare": "cadere",
+    "crollare": "cadere",
+    "scendere": "cadere",
+    "altezza": "cadere",
+    "vertigini": "cadere",
+    "vuoto": "cadere",
+    "abisso": "cadere",
     
+    // Denti e bocca
     "denti": "denti",
     "dente": "denti",
     "bocca": "denti",
+    "mascella": "denti",
+    "mordere": "denti",
+    "masticare": "denti",
+    "sorriso": "denti",
+    "lingua": "denti",
+    "perdere denti": "denti",
+    "rompere denti": "denti",
     
+    // Serpenti e rettili
     "serpente": "serpente",
     "serpenti": "serpente",
     "rettile": "serpente",
+    "vipera": "serpente",
+    "cobra": "serpente",
+    "pitone": "serpente",
+    "squame": "serpente",
+    "strisciare": "serpente",
+    "sibilare": "serpente",
+    "veleno": "serpente",
+    "morso": "serpente",
     
+    // Inseguimento e fuga
     "inseguire": "inseguimento",
     "inseguito": "inseguimento",
     "rincorrere": "inseguimento",
     "fuggire": "inseguimento",
+    "scappare": "inseguimento",
+    "correre": "inseguimento",
+    "fuga": "inseguimento",
+    "caccia": "inseguimento",
+    "preda": "inseguimento",
+    "predatore": "inseguimento",
+    "sfuggire": "inseguimento",
+    "nascondersi": "inseguimento",
+    "paura": "inseguimento",
     
+    // Bambini e infanzia
     "bambino": "bambino",
     "bambina": "bambino",
     "neonato": "bambino",
-    "infante": "bambino"
+    "infante": "bambino",
+    "bimbo": "bambino",
+    "piccolo": "bambino",
+    "figlio": "bambino",
+    "figlia": "bambino",
+    "nascita": "bambino",
+    "infanzia": "bambino",
+    "culla": "bambino",
+    "giocare": "bambino",
+    "giocattolo": "bambino"
   };
+  
+  // Aggiungi simboli per la gara ciclistica
+  fallbackDreamSymbols["gara"] = {
+    symbol: "Competizione",
+    meanings: {
+      general: "Le competizioni nei sogni simboleggiano la rivalità, l'ambizione e il desiderio di distinguersi. Possono riflettere situazioni di conflitto o sfida nella vita reale.",
+      psychological: "Secondo Jung, le competizioni nei sogni rappresentano l'aspirazione all'individuazione e il confronto con parti di sé. Per Freud, possono simboleggiare rivalità tra fratelli o con figure genitoriali.",
+      cultural: [
+        "Nelle culture occidentali moderne, la competizione è spesso collegata al successo e all'affermazione personale.",
+        "In molte filosofie orientali, come il taoismo, la competizione è vista come un allontanamento dall'armonia naturale.",
+        "Nelle società tribali, le competizioni rituali servono come meccanismi per stabilire gerarchie sociali senza ricorrere alla violenza."
+      ]
+    },
+    relatedSymbols: ["Vittoria", "Sconfitta", "Premio", "Avversario"],
+    categories: ["Situazioni", "Azioni", "Relazioni sociali"]
+  };
+  
+  keywordsToSymbols["gara"] = "gara";
+  keywordsToSymbols["competizione"] = "gara";
+  keywordsToSymbols["sfida"] = "gara";
+  keywordsToSymbols["vincere"] = "gara";
+  keywordsToSymbols["perdere"] = "gara";
+  keywordsToSymbols["vittoria"] = "gara";
+  keywordsToSymbols["sconfitta"] = "gara";
+  keywordsToSymbols["premio"] = "gara";
+  keywordsToSymbols["medaglia"] = "gara";
+  keywordsToSymbols["trofeo"] = "gara";
+  keywordsToSymbols["avversario"] = "gara";
+  keywordsToSymbols["rivale"] = "gara";
+  keywordsToSymbols["ciclistica"] = "gara";
+  keywordsToSymbols["bicicletta"] = "gara";
+  keywordsToSymbols["corsa"] = "gara";
   
   // Converte il testo in minuscolo per una corrispondenza case-insensitive
   const lowercaseDreamText = dreamText.toLowerCase();
@@ -194,6 +302,23 @@ export function getFallbackExtractedSymbols(dreamText: string) {
       foundSymbols.add(symbolKey);
     }
   });
+  
+  // Se non sono stati trovati simboli, prova a restituire comunque qualcosa di generale
+  if (foundSymbols.size === 0) {
+    const wordsInDream = lowercaseDreamText.split(/\s+/).filter(w => w.length > 3); // considera solo parole lunghe
+    if (wordsInDream.length > 0) {
+      // Sceglie una parola significativa dal sogno
+      const significantWord = wordsInDream[Math.floor(Math.random() * wordsInDream.length)];
+      
+      // Crea un simbolo generico basato su questa parola
+      return {
+        mainSymbols: [{
+          symbol: significantWord.charAt(0).toUpperCase() + significantWord.slice(1),
+          briefDescription: `Elemento che rappresenta aspetti della tua personalità o situazioni nella tua vita.`
+        }]
+      };
+    }
+  }
   
   // Converte i simboli trovati in oggetti con breve descrizione
   const extractedSymbols = Array.from(foundSymbols).map(symbolKey => {
