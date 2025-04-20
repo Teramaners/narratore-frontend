@@ -170,6 +170,8 @@ export default function Home() {
     setCategoria("non_categorizzato");
     setEmozione("neutro");
     setPreferito(false);
+    setSoundtrack("");
+    setSoundMood("");
     setError("");
   };
 
@@ -183,6 +185,8 @@ export default function Home() {
       if (sognoSalvato.categoria) setCategoria(sognoSalvato.categoria);
       if (sognoSalvato.emozione) setEmozione(sognoSalvato.emozione);
       if (sognoSalvato.preferito !== undefined) setPreferito(sognoSalvato.preferito);
+      if (sognoSalvato.soundtrack) setSoundtrack(sognoSalvato.soundtrack);
+      if (sognoSalvato.soundMood) setSoundMood(sognoSalvato.soundMood);
     } 
     // Se viene dal database, mappa content a testo e story a racconto
     else if (sognoSalvato.content) {
@@ -197,6 +201,8 @@ export default function Home() {
           : sognoSalvato.isFavorite;
         setPreferito(isPreferito);
       }
+      if (sognoSalvato.soundtrack) setSoundtrack(sognoSalvato.soundtrack);
+      if (sognoSalvato.soundMood) setSoundMood(sognoSalvato.soundMood);
     }
   };
 
@@ -267,65 +273,106 @@ export default function Home() {
             <StoryDisplay story={racconto} />
             
             {racconto && (
-              <DreamCategory
-                category={categoria}
-                emotion={emozione}
-                isFavorite={preferito}
-                onCategoryChange={(cat) => {
-                  setCategoria(cat);
-                  // Trova il sogno corrente dal database e aggiornalo se esiste
-                  const currentDream = sogniSalvati.find((d: any) => 
-                    (d.content === sogno && d.story === racconto) || 
-                    (d.testo === sogno && d.racconto === racconto)
-                  );
-                  if (currentDream && currentDream.id) {
-                    saveDreamMutation.mutate({
-                      id: currentDream.id,
-                      testo: sogno,
-                      racconto: racconto,
-                      categoria: cat,
-                      emozione: emozione,
-                      preferito: preferito
-                    });
-                  }
-                }}
-                onEmotionChange={(emoz) => {
-                  setEmozione(emoz);
-                  // Trova il sogno corrente dal database e aggiornalo se esiste
-                  const currentDream = sogniSalvati.find((d: any) => 
-                    (d.content === sogno && d.story === racconto) || 
-                    (d.testo === sogno && d.racconto === racconto)
-                  );
-                  if (currentDream && currentDream.id) {
-                    saveDreamMutation.mutate({
-                      id: currentDream.id,
-                      testo: sogno,
-                      racconto: racconto,
-                      categoria: categoria,
-                      emozione: emoz,
-                      preferito: preferito
-                    });
-                  }
-                }}
-                onFavoriteChange={(fav) => {
-                  setPreferito(fav);
-                  // Trova il sogno corrente dal database e aggiornalo se esiste
-                  const currentDream = sogniSalvati.find((d: any) => 
-                    (d.content === sogno && d.story === racconto) || 
-                    (d.testo === sogno && d.racconto === racconto)
-                  );
-                  if (currentDream && currentDream.id) {
-                    saveDreamMutation.mutate({
-                      id: currentDream.id,
-                      testo: sogno,
-                      racconto: racconto,
-                      categoria: categoria,
-                      emozione: emozione,
-                      preferito: fav
-                    });
-                  }
-                }}
-              />
+              <>
+                <DreamCategory
+                  category={categoria}
+                  emotion={emozione}
+                  isFavorite={preferito}
+                  onCategoryChange={(cat) => {
+                    setCategoria(cat);
+                    // Trova il sogno corrente dal database e aggiornalo se esiste
+                    const currentDream = sogniSalvati.find((d: any) => 
+                      (d.content === sogno && d.story === racconto) || 
+                      (d.testo === sogno && d.racconto === racconto)
+                    );
+                    if (currentDream && currentDream.id) {
+                      saveDreamMutation.mutate({
+                        id: currentDream.id,
+                        testo: sogno,
+                        racconto: racconto,
+                        categoria: cat,
+                        emozione: emozione,
+                        preferito: preferito,
+                        soundtrack: soundtrack,
+                        soundMood: soundMood
+                      });
+                    }
+                  }}
+                  onEmotionChange={(emoz) => {
+                    setEmozione(emoz);
+                    // Trova il sogno corrente dal database e aggiornalo se esiste
+                    const currentDream = sogniSalvati.find((d: any) => 
+                      (d.content === sogno && d.story === racconto) || 
+                      (d.testo === sogno && d.racconto === racconto)
+                    );
+                    if (currentDream && currentDream.id) {
+                      saveDreamMutation.mutate({
+                        id: currentDream.id,
+                        testo: sogno,
+                        racconto: racconto,
+                        categoria: categoria,
+                        emozione: emoz,
+                        preferito: preferito,
+                        soundtrack: soundtrack,
+                        soundMood: soundMood
+                      });
+                    }
+                  }}
+                  onFavoriteChange={(fav) => {
+                    setPreferito(fav);
+                    // Trova il sogno corrente dal database e aggiornalo se esiste
+                    const currentDream = sogniSalvati.find((d: any) => 
+                      (d.content === sogno && d.story === racconto) || 
+                      (d.testo === sogno && d.racconto === racconto)
+                    );
+                    if (currentDream && currentDream.id) {
+                      saveDreamMutation.mutate({
+                        id: currentDream.id,
+                        testo: sogno,
+                        racconto: racconto,
+                        categoria: categoria,
+                        emozione: emozione,
+                        preferito: fav,
+                        soundtrack: soundtrack,
+                        soundMood: soundMood
+                      });
+                    }
+                  }}
+                />
+                
+                <div className="mt-4">
+                  <DreamSoundtrack 
+                    dreamContent={sogno}
+                    dreamStory={racconto}
+                    category={categoria}
+                    emotion={emozione}
+                    soundtrack={soundtrack}
+                    soundMood={soundMood}
+                    onSoundtrackChange={(newSoundtrack, newSoundMood) => {
+                      setSoundtrack(newSoundtrack);
+                      setSoundMood(newSoundMood);
+                      
+                      // Trova il sogno corrente dal database e aggiornalo se esiste
+                      const currentDream = sogniSalvati.find((d: any) => 
+                        (d.content === sogno && d.story === racconto) || 
+                        (d.testo === sogno && d.racconto === racconto)
+                      );
+                      if (currentDream && currentDream.id) {
+                        saveDreamMutation.mutate({
+                          id: currentDream.id,
+                          testo: sogno,
+                          racconto: racconto,
+                          categoria: categoria,
+                          emozione: emozione,
+                          preferito: preferito,
+                          soundtrack: newSoundtrack,
+                          soundMood: newSoundMood
+                        });
+                      }
+                    }}
+                  />
+                </div>
+              </>
             )}
           </div>
         </div>
