@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -218,8 +218,9 @@ export function DreamTimeline({ dreams, onSelectDream }: DreamTimelineProps) {
                 >
                   <div className="flex flex-col">
                     <div className="flex justify-between items-start mb-2">
-                      <div className="text-sm font-medium dark:text-white light:text-gray-800">
-                        {formattedDate} <span className="text-xs opacity-70">alle {formattedTime}</span>
+                      <div className="text-sm font-medium dark:text-white light:text-gray-800 flex items-center">
+                        {isFavorite && <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />}
+                        {formattedDate} <span className="text-xs opacity-70 ml-1">alle {formattedTime}</span>
                       </div>
                       
                       <div className="flex space-x-1">
