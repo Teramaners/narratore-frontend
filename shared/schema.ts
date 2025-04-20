@@ -31,8 +31,7 @@ export const dreams = pgTable("dreams", {
   story: text("story").notNull(),
   category: text("category").default("non_categorizzato"),
   emotion: text("emotion").default("neutro"),
-  tags: text("tags").array(),
-  isFavorite: boolean("is_favorite"),
+  isFavorite: integer("is_favorite").default(0), // Useremo 0 per false, 1 per true
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -49,7 +48,6 @@ export const insertDreamSchema = createInsertSchema(dreams).pick({
   story: true,
   category: true,
   emotion: true,
-  tags: true,
   isFavorite: true,
 });
 

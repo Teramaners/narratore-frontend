@@ -4,6 +4,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { DreamInput } from '@/components/dream-input';
 import { DreamList } from '@/components/dream-list';
 import { StoryDisplay } from '@/components/story-display';
+import { DreamCategory } from '@/components/dream-category';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SavedDream } from '@/lib/localStorage';
@@ -17,6 +18,9 @@ export default function Home() {
   const { toast } = useToast();
   const [sogno, setSogno] = useState("");
   const [racconto, setRacconto] = useState("");
+  const [categoria, setCategoria] = useState("non_categorizzato");
+  const [emozione, setEmozione] = useState("neutro");
+  const [preferito, setPreferito] = useState(false);
   const [generationLoading, setGenerationLoading] = useState(false);
   const [error, setError] = useState("");
 
