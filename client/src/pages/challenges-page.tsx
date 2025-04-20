@@ -13,7 +13,9 @@ import {
   Heart, 
   MessageCircle, 
   Sparkles,
-  Loader2
+  Loader2,
+  History,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -70,10 +72,6 @@ const createChallengeSchema = z.object({
   }),
   end_date: z.string().refine(val => !isNaN(Date.parse(val)), {
     message: "Data di fine non valida",
-  }).refine((val, ctx) => {
-    return Date.parse(val) > Date.parse(ctx.data.start_date);
-  }, {
-    message: "La data di fine deve essere successiva alla data di inizio",
   }),
   points_reward: z.number().int().min(5).max(100).default(10),
 });
@@ -534,8 +532,7 @@ function ChallengeCard({ challenge }: { challenge: any }) {
   );
 }
 
-// Importazione separata per evitare errori di linter
-import { Check } from 'lucide-react';
+// Nessuna importazione separata necessaria
 
 // Pagina principale delle sfide
 export default function ChallengesPage() {
@@ -649,7 +646,7 @@ export default function ChallengesPage() {
               Future ({futureChallenges.length})
             </TabsTrigger>
             <TabsTrigger value="past" className="gap-2">
-              <Clock size={14} />
+              <History size={14} />
               Concluse ({pastChallenges.length})
             </TabsTrigger>
           </TabsList>

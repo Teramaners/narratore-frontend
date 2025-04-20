@@ -12,7 +12,7 @@ function Router() {
     <Switch>
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/" component={Home} />
-      <Route path="/sfide" component={ChallengesPage} />
+      <ProtectedRoute path="/sfide" component={ChallengesPage} />
       <Route component={NotFound} />
     </Switch>
   );
