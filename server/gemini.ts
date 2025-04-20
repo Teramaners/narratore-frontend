@@ -21,6 +21,19 @@ interface ImageResponse {
   imageUrl: string;
 }
 
+export interface EmotionData {
+  name: string;
+  intensity: number;
+  description: string;
+  color: string;
+}
+
+export interface SentimentAnalysisResponse {
+  primaryEmotion: string;
+  emotions: EmotionData[];
+  analysis: string;
+}
+
 export async function generateStoryFromDream(dream: string): Promise<StoryResponse> {
   try {
     // Utilizza il modello gemini-1.5-pro-latest
@@ -64,6 +77,97 @@ export async function generateEmojiTranslation(dream: string): Promise<EmojiResp
     return { emojiTranslation: emojiText };
   } catch (error: any) {
     throw new Error(`Gemini API error: ${error?.message || 'Unknown error'}`);
+  }
+}
+
+export async function analyzeEmotionsInDream(dream: string, story: string): Promise<SentimentAnalysisResponse> {
+  try {
+    // Utilizza il modello gemini-1.5-pro-latest
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+
+    // Prompt per l'analisi delle emozioni
+    const prompt = `
+    Sei uno psicologo esperto nell'analisi delle emozioni nei sogni.
+    
+    Ecco un sogno e il racconto elaborato:
+    
+    Sogno originale: "${dream}"
+    
+    Racconto elaborato: "${story}"
+    
+    Esegui un'analisi emotiva dettagliata e restituisci il risultato in formato JSON con la seguente struttura:
+    
+    {
+      "primaryEmotion": "Nome dell'emozione principale rilevata",
+      "emotions": [
+        {
+          "name": "Nome dell'emozione",
+          "intensity": numeroDa0a10,
+          "description": "Breve descrizione di come quest'emozione si manifesta nel sogno",
+          "color": "Codice colore esadecimale che rappresenta questa emozione"
+        },
+        ...
+      ],
+      "analysis": "Breve analisi (3-4 frasi) delle emozioni complesse presenti nel sogno"
+    }
+    
+    Note:
+    1. Identifica almeno 3-5 emozioni diverse presenti nel sogno
+    2. Assegna a ciascuna un'intensità compresa tra 0 e 10
+    3. Per i colori, usa codici esadecimali che riflettano l'emozione:
+       - Felicità/Gioia: tonalità di giallo e arancione (#FFD700, #FFA500, ecc.)
+       - Tristezza: tonalità di blu (#4682B4, #1E90FF, ecc.)
+       - Paura: tonalità di viola scuro o grigio (#4B0082, #708090, ecc.)
+       - Rabbia: tonalità di rosso (#FF0000, #8B0000, ecc.)
+       - Sorpresa: tonalità di verde chiaro o turchese (#00FA9A, #00CED1, ecc.)
+       - Disgusto: tonalità di verde oliva o marrone (#556B2F, #8B4513, ecc.)
+       - Calma/Serenità: tonalità di azzurro chiaro (#B0E0E6, #87CEEB, ecc.)
+       - Confusione: tonalità di lavanda o indaco (#E6E6FA, #6A5ACD, ecc.)
+       - Nostalgia: tonalità di rosa o pesca (#FFC0CB, #FFDAB9, ecc.)
+    
+    I nomi delle emozioni devono essere in italiano.
+    Le descrizioni devono essere in italiano.
+    
+    Restituisci solo il JSON valido, senza alcun altro testo o spiegazione.
+    `;
+
+    // Genera il contenuto
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text().trim();
+
+    // Cerca di estrarre il JSON dalla risposta (potrebbe essere circondato da backtick o altro)
+    let jsonText = text;
+    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonMatch && jsonMatch[1]) {
+      jsonText = jsonMatch[1].trim();
+    }
+
+    // Parsa il JSON
+    try {
+      const emotionsData = JSON.parse(jsonText);
+      
+      // Validazione basilare
+      if (!emotionsData.primaryEmotion || !Array.isArray(emotionsData.emotions) || !emotionsData.analysis) {
+        throw new Error('Il formato della risposta JSON non è corretto');
+      }
+      
+      // Normalizza i dati di intensità per assicurarsi che siano numeri
+      emotionsData.emotions = emotionsData.emotions.map(emotion => ({
+        ...emotion,
+        intensity: typeof emotion.intensity === 'string' 
+          ? parseFloat(emotion.intensity) 
+          : emotion.intensity
+      }));
+      
+      return emotionsData;
+    } catch (jsonError) {
+      console.error('Errore nel parsing JSON:', jsonError, 'Testo ricevuto:', jsonText);
+      throw new Error('Impossibile interpretare la risposta come JSON valido');
+    }
+  } catch (error: any) {
+    console.error('Errore nell\'analisi delle emozioni:', error);
+    throw new Error(`Errore nell'analisi delle emozioni: ${error?.message || 'Errore sconosciuto'}`);
   }
 }
 

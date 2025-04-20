@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateStoryFromDream, generateEmojiTranslation, generateImageFromDream } from "./gemini";
+import { generateStoryFromDream, generateEmojiTranslation, generateImageFromDream, analyzeEmotionsInDream } from "./gemini";
 import { insertDreamSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
@@ -109,6 +109,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         next();
       }
     });
+  });
+  
+  // Endpoint per l'analisi delle emozioni nel sogno
+  app.post("/api/analizza-emozioni", async (req, res) => {
+    try {
+      const { sogno, racconto } = req.body;
+      
+      if (!sogno || typeof sogno !== "string" || sogno.trim() === "") {
+        return res.status(400).json({ error: "Il contenuto del sogno è richiesto" });
+      }
+      
+      if (!racconto || typeof racconto !== "string" || racconto.trim() === "") {
+        return res.status(400).json({ error: "Il racconto del sogno è richiesto" });
+      }
+      
+      const result = await analyzeEmotionsInDream(sogno, racconto);
+      
+      // Restituisce l'analisi delle emozioni
+      return res.status(200).json(result);
+    } catch (error: any) {
+      console.error("Error analyzing emotions:", error);
+      return res.status(500).json({
+        error: "Si è verificato un errore nell'analisi delle emozioni",
+        details: error.message
+      });
+    }
   });
   
 
