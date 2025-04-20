@@ -32,6 +32,8 @@ export const dreams = pgTable("dreams", {
   category: text("category").default("non_categorizzato"),
   emotion: text("emotion").default("neutro"),
   isFavorite: integer("is_favorite").default(0), // Useremo 0 per false, 1 per true
+  soundtrack: text("soundtrack"), // Tema musicale associato al sogno
+  soundMood: text("sound_mood"), // Umore musicale (allegro, misterioso, inquietante, ecc.)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -49,6 +51,8 @@ export const insertDreamSchema = createInsertSchema(dreams).pick({
   category: true,
   emotion: true,
   isFavorite: true,
+  soundtrack: true,
+  soundMood: true,
 });
 
 export type InsertDream = z.infer<typeof insertDreamSchema>;

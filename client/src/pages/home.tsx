@@ -5,6 +5,7 @@ import { DreamInput } from '@/components/dream-input';
 import { DreamList } from '@/components/dream-list';
 import { StoryDisplay } from '@/components/story-display';
 import { DreamCategory } from '@/components/dream-category';
+import { DreamSoundtrack } from '@/components/dream-soundtrack';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SavedDream } from '@/lib/localStorage';
@@ -21,6 +22,8 @@ export default function Home() {
   const [categoria, setCategoria] = useState("non_categorizzato");
   const [emozione, setEmozione] = useState("neutro");
   const [preferito, setPreferito] = useState(false);
+  const [soundtrack, setSoundtrack] = useState<string>("");
+  const [soundMood, setSoundMood] = useState<string>("");
   const [generationLoading, setGenerationLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -46,6 +49,8 @@ export default function Home() {
       categoria?: string,
       emozione?: string,
       preferito?: boolean,
+      soundtrack?: string,
+      soundMood?: string,
       id?: number // Per gli aggiornamenti
     }) => {
       // Se c'è un ID, aggiorna un sogno esistente
@@ -53,7 +58,9 @@ export default function Home() {
         const response = await apiRequest('PUT', `/api/sogni/${newDream.id}`, {
           category: newDream.categoria || 'non_categorizzato',
           emotion: newDream.emozione || 'neutro',
-          isFavorite: newDream.preferito ? 1 : 0   // Converti booleano in intero (0/1)
+          isFavorite: newDream.preferito ? 1 : 0,   // Converti booleano in intero (0/1)
+          soundtrack: newDream.soundtrack,
+          soundMood: newDream.soundMood
         });
         return response.json();
       }
@@ -65,7 +72,9 @@ export default function Home() {
         story: newDream.racconto,          // 'story' nel database invece di 'racconto'
         category: newDream.categoria || 'non_categorizzato',
         emotion: newDream.emozione || 'neutro',
-        isFavorite: newDream.preferito ? 1 : 0   // Converti booleano in intero (0/1)
+        isFavorite: newDream.preferito ? 1 : 0,   // Converti booleano in intero (0/1)
+        soundtrack: newDream.soundtrack,
+        soundMood: newDream.soundMood
       });
       return response.json();
     },
