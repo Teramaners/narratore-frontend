@@ -14,11 +14,11 @@ import { SavedDream } from '@/lib/localStorage';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/lib/authContext';
+import { useAuth } from '@/hooks/use-auth';
 import { useQuery, useMutation } from '@tanstack/react-query';
 
 export default function Home() {
-  const { user, logout } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const [sogno, setSogno] = useState("");
   const [racconto, setRacconto] = useState("");
@@ -115,18 +115,8 @@ export default function Home() {
   });
 
   // Gestisce il logout
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast({
-        description: 'Hai effettuato il logout con successo',
-      });
-    } catch (err: any) {
-      toast({
-        variant: 'destructive',
-        description: `Errore durante il logout: ${err.message || 'Si è verificato un errore'}`,
-      });
-    }
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
 
   const inviaSogno = async () => {
