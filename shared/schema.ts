@@ -9,15 +9,19 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  // Campi per il profilo social
+  profileImage: text("profile_image"),
+  bio: text("bio"),
+  challengesCompleted: integer("challenges_completed").default(0),
+  dreamsShared: integer("dreams_shared").default(0),
+  inspirationPoints: integer("inspiration_points").default(0),
 });
-
-export const usersRelations = relations(users, ({ many }) => ({
-  dreams: many(dreams)
-}));
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  profileImage: true,
+  bio: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -40,14 +44,9 @@ export const dreams = pgTable("dreams", {
   symbolism: text("symbolism"), // Simbolismo presente nel sogno identificato dall'AI
   insight: text("insight"), // Approfondimento psicologico sul sogno
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  isInChallenge: boolean("is_in_challenge").default(false), // Flag per i sogni che partecipano a sfide
+  challengeId: integer("challenge_id"), // ID della sfida a cui partecipa (se applicabile)
 });
-
-export const dreamsRelations = relations(dreams, ({ one }) => ({
-  user: one(users, {
-    fields: [dreams.userId],
-    references: [users.id],
-  })
-}));
 
 export const insertDreamSchema = createInsertSchema(dreams).pick({
   userId: true,
@@ -63,7 +62,21 @@ export const insertDreamSchema = createInsertSchema(dreams).pick({
   interpretation: true,
   symbolism: true,
   insight: true,
+  isInChallenge: true,
+  challengeId: true,
 });
 
 export type InsertDream = z.infer<typeof insertDreamSchema>;
 export type Dream = typeof dreams.$inferSelect;
+
+// Prima definiamo le relazioni base per users e dreams
+export const usersRelations = relations(users, ({ many }) => ({
+  dreams: many(dreams)
+}));
+
+export const dreamsRelations = relations(dreams, ({ one }) => ({
+  user: one(users, {
+    fields: [dreams.userId],
+    references: [users.id],
+  })
+}));
