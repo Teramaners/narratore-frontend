@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateStoryFromDream } from "./gemini";
+import { generateStoryFromDream, generateEmojiTranslation } from "./gemini";
 import { insertDreamSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
@@ -46,6 +46,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error generating story:", error);
       return res.status(500).json({ 
         error: "Si è verificato un errore nella generazione del racconto", 
+        details: error.message 
+      });
+    }
+  });
+  
+  // Endpoint per la traduzione del sogno in emoji
+  app.post("/api/genera-emoji", async (req, res) => {
+    try {
+      const { sogno } = req.body;
+      
+      if (!sogno || typeof sogno !== "string" || sogno.trim() === "") {
+        return res.status(400).json({ error: "Il contenuto del sogno è richiesto" });
+      }
+
+      const result = await generateEmojiTranslation(sogno);
+      
+      // Restituisce la traduzione emoji
+      return res.status(200).json({ emojiTranslation: result.emojiTranslation });
+    } catch (error: any) {
+      console.error("Error generating emoji translation:", error);
+      return res.status(500).json({ 
+        error: "Si è verificato un errore nella traduzione in emoji", 
         details: error.message 
       });
     }
