@@ -1,10 +1,10 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import passport from "passport";
 import { storage } from "./storage";
 import { generateStoryFromDream } from "./gemini";
 import { insertDreamSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
+import { setupAuth } from "./auth";
 
 // Middleware per proteggere le rotte che richiedono autenticazione
 function isAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -15,74 +15,12 @@ function isAuthenticated(req: Request, res: Response, next: NextFunction) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Rotte di autenticazione
-  
-  // Registrazione utente
-  app.post("/api/register", async (req, res) => {
-    try {
-      const userData = insertUserSchema.parse(req.body);
-      
-      // Controlla se l'utente esiste già
-      const existingUser = await storage.getUserByUsername(userData.username);
-      
-      if (existingUser) {
-        return res.status(400).json({ error: "Username già in uso" });
-      }
-      
-      // Crea il nuovo utente
-      const newUser = await storage.createUser(userData);
-      
-      // Rimuovi la password dalla risposta
-      const { password, ...userWithoutPassword } = newUser;
-      
-      return res.status(201).json(userWithoutPassword);
-    } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Dati utente non validi", details: error.errors });
-      }
-      
-      console.error("Error registering user:", error);
-      return res.status(500).json({ 
-        error: "Si è verificato un errore nella registrazione dell'utente", 
-        details: error.message 
-      });
-    }
-  });
-  
-  // Login
-  app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: Error, user: any, info: any) => {
-      if (err) {
-        return next(err);
-      }
-      
-      if (!user) {
-        return res.status(401).json({ error: info.message || "Autenticazione fallita" });
-      }
-      
-      req.login(user, (err) => {
-        if (err) {
-          return next(err);
-        }
-        
-        // Rimuovi la password dalla risposta
-        const { password, ...userWithoutPassword } = user;
-        
-        return res.status(200).json(userWithoutPassword);
-      });
-    })(req, res, next);
-  });
-  
-  // Logout
-  app.post("/api/logout", (req, res) => {
-    req.logout(() => {
-      res.status(200).json({ success: true });
-    });
-  });
-  
-  // Ottieni l'utente corrente
+  // Setup autenticazione (Passport, sessioni, ecc.)
+  setupAuth(app);
+
+  // Aggiunge un endpoint alias da /api/me a /api/user per retrocompatibilità
   app.get("/api/me", (req, res) => {
-    if (!req.user) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Non autenticato" });
     }
     
