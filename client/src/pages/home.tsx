@@ -53,7 +53,7 @@ export default function Home() {
         const response = await apiRequest('PUT', `/api/sogni/${newDream.id}`, {
           category: newDream.categoria || 'non_categorizzato',
           emotion: newDream.emozione || 'neutro',
-          isFavorite: newDream.preferito || false
+          isFavorite: newDream.preferito ? 1 : 0   // Converti booleano in intero (0/1)
         });
         return response.json();
       }
@@ -65,7 +65,7 @@ export default function Home() {
         story: newDream.racconto,          // 'story' nel database invece di 'racconto'
         category: newDream.categoria || 'non_categorizzato',
         emotion: newDream.emozione || 'neutro',
-        isFavorite: newDream.preferito || false
+        isFavorite: newDream.preferito ? 1 : 0   // Converti booleano in intero (0/1)
       });
       return response.json();
     },
