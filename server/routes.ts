@@ -12,6 +12,7 @@ import { insertDreamSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
 import path from "path";
+import { ChallengeController } from "./social-challenge";
 
 // Middleware per proteggere le rotte che richiedono autenticazione
 function isAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -302,6 +303,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         details: error.message 
       });
     }
+  });
+
+  // API per le sfide di ispirazione dei sogni (protette da autenticazione)
+  
+  // Ottieni tutte le sfide
+  app.get("/api/sfide", async (req, res) => {
+    await ChallengeController.getAllChallenges(req, res);
+  });
+  
+  // Ottieni una sfida specifica
+  app.get("/api/sfide/:id", async (req, res) => {
+    await ChallengeController.getChallengeById(req, res);
+  });
+  
+  // Crea una nuova sfida
+  app.post("/api/sfide", isAuthenticated, async (req, res) => {
+    await ChallengeController.createChallenge(req, res);
+  });
+  
+  // Aggiorna una sfida esistente
+  app.put("/api/sfide/:id", isAuthenticated, async (req, res) => {
+    await ChallengeController.updateChallenge(req, res);
+  });
+  
+  // Partecipa a una sfida con un sogno
+  app.post("/api/sfide/:id/partecipa", isAuthenticated, async (req, res) => {
+    await ChallengeController.participateInChallenge(req, res);
+  });
+  
+  // Ottieni le partecipazioni a una sfida
+  app.get("/api/sfide/:id/partecipazioni", async (req, res) => {
+    await ChallengeController.getChallengeParticipations(req, res);
+  });
+  
+  // Ottieni un prompt di ispirazione per una sfida
+  app.get("/api/sfide/:id/prompt", async (req, res) => {
+    await ChallengeController.getChallengePrompt(req, res);
+  });
+  
+  // Aggiungi una reazione a un sogno
+  app.post("/api/sogni/:id/reazioni", isAuthenticated, async (req, res) => {
+    await ChallengeController.reactToDream(req, res);
+  });
+  
+  // Ottieni le reazioni a un sogno
+  app.get("/api/sogni/:id/reazioni", async (req, res) => {
+    await ChallengeController.getDreamReactions(req, res);
   });
 
   const httpServer = createServer(app);

@@ -261,7 +261,7 @@ export const ChallengeController = {
       // Aggiorna il contatore della sfida
       await db.update(dreamChallenges)
         .set({
-          participantCount: challenge.participantCount + 1
+          participantCount: (challenge.participantCount || 0) + 1
         })
         .where(eq(dreamChallenges.id, challengeId));
       
@@ -442,7 +442,7 @@ export const ChallengeController = {
         if (participation) {
           await db.update(challengeParticipations)
             .set({
-              reactionCount: participation.reactionCount + 1
+              reactionCount: (participation.reactionCount || 0) + 1
             })
             .where(eq(challengeParticipations.id, participation.id));
         }
