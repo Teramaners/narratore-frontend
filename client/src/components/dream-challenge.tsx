@@ -471,7 +471,7 @@ function ParticipateInChallengeDialog({
             <h4 className="text-sm font-medium mb-2">Seleziona un sogno da condividere:</h4>
             {isLoadingDreams ? (
               <div className="text-center py-4">Caricamento sogni...</div>
-            ) : dreams && dreams.length > 0 ? (
+            ) : dreams && Array.isArray(dreams) && dreams.length > 0 ? (
               <div className="grid gap-2 max-h-[300px] overflow-y-auto">
                 {dreams.map((dream: any) => (
                   <div
@@ -573,7 +573,7 @@ function ChallengeCard({ challenge }: { challenge: any }) {
             challenge={challenge}
           />
         )}
-        {participations && participations.length > 0 && (
+        {participations && Array.isArray(participations) && participations.length > 0 && (
           <div className="mt-2 flex -space-x-2 overflow-hidden">
             {participations.slice(0, 5).map((p: any, i: number) => (
               <Avatar key={i} className="inline-block ring-2 ring-background w-8 h-8">

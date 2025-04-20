@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Moon, LogOut, List, Clock } from 'lucide-react';
+import { Moon, LogOut, List, Clock, Trophy } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { DreamInput } from '@/components/dream-input';
 import { DreamList } from '@/components/dream-list';
@@ -263,6 +263,14 @@ export default function Home() {
                 <span className="text-sm dark:text-purple-200 light:text-indigo-700">
                   Ciao, {user.username}
                 </span>
+                <Button
+                  variant="ghost"
+                  className="ml-2 dark:text-purple-200 light:text-indigo-700"
+                  onClick={() => window.location.href = "/sfide"}
+                >
+                  <Trophy className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Sfide</span>
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
