@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { apiRequest } from '@/lib/queryClient';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Smile, ClipboardCopy, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Loader2, RefreshCw, Copy } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
 interface DreamEmojiTranslatorProps {
@@ -18,18 +20,16 @@ export function DreamEmojiTranslator({
 }: DreamEmojiTranslatorProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Funzione per tradurre il sogno in emoji
-  const translateToEmoji = async () => {
-    if (!dreamContent.trim()) {
-      toast({
-        variant: 'destructive',
-        description: 'Non c\'è un sogno da tradurre. Inserisci prima un sogno.',
-      });
+  const generateEmojiTranslation = async () => {
+    if (!dreamContent) {
+      setError('Non c\'è alcun sogno da tradurre in emoji');
       return;
     }
 
     setLoading(true);
+    setError(null);
 
     try {
       const response = await apiRequest('POST', '/api/genera-emoji', { sogno: dreamContent });
@@ -40,98 +40,98 @@ export function DreamEmojiTranslator({
       }
 
       onEmojiTranslationChange(data.emojiTranslation);
-      
       toast({
-        description: 'Traduzione emoji completata!',
+        description: 'Traduzione emoji generata con successo',
       });
-    } catch (error: any) {
-      console.error('Errore nella traduzione emoji:', error);
-      toast({
-        variant: 'destructive',
-        description: `Errore: ${error.message || 'Problema nella traduzione emoji.'}`,
-      });
+    } catch (err: any) {
+      setError(`Errore nella generazione delle emoji: ${err.message || 'Si è verificato un errore'}`);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Funzione per copiare le emoji negli appunti
-  const copyEmojiToClipboard = () => {
-    if (!emojiTranslation) return;
-    
-    navigator.clipboard.writeText(emojiTranslation)
-      .then(() => {
-        toast({
-          description: 'Emoji copiate negli appunti!',
-        });
-      })
-      .catch((error) => {
-        console.error('Errore nella copia:', error);
-        toast({
-          variant: 'destructive',
-          description: 'Non è stato possibile copiare le emoji.',
-        });
-      });
+  const copyToClipboard = () => {
+    if (emojiTranslation) {
+      navigator.clipboard.writeText(emojiTranslation).then(
+        () => {
+          toast({
+            description: 'Emoji copiate negli appunti',
+          });
+        },
+        (err) => {
+          console.error('Impossibile copiare negli appunti:', err);
+          toast({
+            variant: 'destructive',
+            description: 'Impossibile copiare negli appunti',
+          });
+        }
+      );
+    }
   };
 
   return (
-    <Card className="p-4 bg-white/10 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200/20 dark:border-slate-700/30 rounded-lg shadow-md">
-      <div className="flex flex-col">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-md font-semibold text-slate-800 dark:text-slate-200">
-            Traduzione Emoji
-          </h3>
-          <div className="flex space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-              onClick={translateToEmoji}
-              disabled={loading || !dreamContent}
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              <span className="ml-1 text-xs">Genera</span>
-            </Button>
-            {emojiTranslation && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-                onClick={copyEmojiToClipboard}
-              >
-                <Copy className="h-4 w-4" />
-                <span className="ml-1 text-xs">Copia</span>
-              </Button>
-            )}
-          </div>
-        </div>
+    <Card className="relative overflow-hidden dark:bg-gray-800/60 light:bg-white/80 border-2 dark:border-purple-900/50 light:border-indigo-100">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center text-lg">
+          <Smile className="h-5 w-5 mr-2 dark:text-yellow-400 light:text-indigo-600" />
+          Traduttore Emoji del Sogno
+        </CardTitle>
+        <CardDescription>
+          Traduci il tuo sogno in una sequenza di emoji per condividerlo più facilmente
+        </CardDescription>
+      </CardHeader>
 
-        {emojiTranslation ? (
-          <div className="min-h-16 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-md flex items-center justify-center">
-            <p className="text-2xl leading-relaxed tracking-wide text-center">
-              {emojiTranslation}
-            </p>
+      <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {loading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-3/4" />
+          </div>
+        ) : emojiTranslation ? (
+          <div className="relative p-4 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-950 dark:to-purple-950 rounded-md">
+            <p className="text-2xl leading-relaxed break-words">{emojiTranslation}</p>
           </div>
         ) : (
-          <div className="min-h-16 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-md flex items-center justify-center">
-            <p className="text-sm text-slate-500 dark:text-slate-400 text-center italic">
-              {loading
-                ? 'Traduzione in corso...'
-                : 'Clicca su "Genera" per tradurre il tuo sogno in emoji'}
+          <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-md dark:border-gray-700 light:border-gray-300">
+            <Smile className="h-10 w-10 mb-3 dark:text-gray-500 light:text-gray-400" />
+            <p className="text-center dark:text-gray-400 light:text-gray-500">
+              Genera una traduzione emoji del tuo sogno per condividere il tuo racconto in modo divertente e visuale
             </p>
           </div>
         )}
+      </CardContent>
+
+      <CardFooter className="flex justify-between pt-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={generateEmojiTranslation}
+          disabled={loading || !dreamContent}
+          className="dark:bg-indigo-900/30 dark:hover:bg-indigo-800/50 light:bg-indigo-50 light:hover:bg-indigo-100"
+        >
+          <Sparkles className="h-4 w-4 mr-2" />
+          {emojiTranslation ? 'Rigenera Emoji' : 'Genera Emoji'}
+        </Button>
 
         {emojiTranslation && (
-          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 text-center">
-            Ecco la traduzione del tuo sogno in emoji! Ogni simbolo rappresenta un elemento o un'emozione del tuo sogno.
-          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={copyToClipboard}
+            className="dark:text-purple-300 dark:hover:text-purple-200 light:text-indigo-600 light:hover:text-indigo-800"
+          >
+            <ClipboardCopy className="h-4 w-4 mr-2" />
+            Copia Emoji
+          </Button>
         )}
-      </div>
+      </CardFooter>
     </Card>
   );
 }
