@@ -8,6 +8,7 @@ import { DreamCategory } from '@/components/dream-category';
 import { DreamSoundtrack } from '@/components/dream-soundtrack';
 import { DreamShare } from '@/components/dream-share';
 import { DreamTimeline } from '@/components/dream-timeline';
+import { DreamEmojiTranslator } from '@/components/dream-emoji-translator';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SavedDream } from '@/lib/localStorage';
@@ -27,6 +28,7 @@ export default function Home() {
   const [preferito, setPreferito] = useState(false);
   const [soundtrack, setSoundtrack] = useState<string>("");
   const [soundMood, setSoundMood] = useState<string>("");
+  const [emojiTranslation, setEmojiTranslation] = useState<string>("");
   const [generationLoading, setGenerationLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -54,6 +56,7 @@ export default function Home() {
       preferito?: boolean,
       soundtrack?: string,
       soundMood?: string,
+      emojiTranslation?: string,
       id?: number // Per gli aggiornamenti
     }) => {
       // Se c'è un ID, aggiorna un sogno esistente
@@ -63,7 +66,8 @@ export default function Home() {
           emotion: newDream.emozione || 'neutro',
           isFavorite: newDream.preferito ? 1 : 0,   // Converti booleano in intero (0/1)
           soundtrack: newDream.soundtrack,
-          soundMood: newDream.soundMood
+          soundMood: newDream.soundMood,
+          emojiTranslation: newDream.emojiTranslation
         });
         return response.json();
       }
@@ -77,7 +81,8 @@ export default function Home() {
         emotion: newDream.emozione || 'neutro',
         isFavorite: newDream.preferito ? 1 : 0,   // Converti booleano in intero (0/1)
         soundtrack: newDream.soundtrack,
-        soundMood: newDream.soundMood
+        soundMood: newDream.soundMood,
+        emojiTranslation: newDream.emojiTranslation
       });
       return response.json();
     },
@@ -129,22 +134,40 @@ export default function Home() {
     setError("");
 
     try {
-      const response = await apiRequest("POST", "/api/genera-racconto", { sogno });
-      const data = await response.json();
+      // Richiesta per generare il racconto
+      const responseStory = await apiRequest("POST", "/api/genera-racconto", { sogno });
+      const dataStory = await responseStory.json();
 
-      if (data.error) {
-        throw new Error(data.error);
+      if (dataStory.error) {
+        throw new Error(dataStory.error);
       }
 
-      setRacconto(data.story || data.racconto); // Supporta entrambi i formati di risposta
+      const storiaGenerata = dataStory.story || dataStory.racconto;
+      setRacconto(storiaGenerata); // Supporta entrambi i formati di risposta
 
-      // Salva il sogno e la storia nel database
+      // Richiesta per generare le emoji (non blocchiamo il flusso principale se fallisce)
+      let emojiGenerata = "";
+      try {
+        const responseEmoji = await apiRequest("POST", "/api/genera-emoji", { sogno });
+        const dataEmoji = await responseEmoji.json();
+        
+        if (!dataEmoji.error && dataEmoji.emojiTranslation) {
+          emojiGenerata = dataEmoji.emojiTranslation;
+          setEmojiTranslation(emojiGenerata);
+        }
+      } catch (emojiError) {
+        console.error("Errore nella generazione delle emoji:", emojiError);
+        // Non blocchiamo il flusso principale se la generazione delle emoji fallisce
+      }
+
+      // Salva il sogno, la storia e le emoji nel database
       await saveDreamMutation.mutateAsync({
         testo: sogno,
-        racconto: data.story || data.racconto,
+        racconto: storiaGenerata,
         categoria: categoria,
         emozione: emozione,
-        preferito: preferito
+        preferito: preferito,
+        emojiTranslation: emojiGenerata
       });
       
       // Ricarica la lista dei sogni
@@ -165,6 +188,7 @@ export default function Home() {
     setPreferito(false);
     setSoundtrack("");
     setSoundMood("");
+    setEmojiTranslation("");
     setError("");
   };
 
@@ -180,6 +204,7 @@ export default function Home() {
       if (sognoSalvato.preferito !== undefined) setPreferito(sognoSalvato.preferito);
       if (sognoSalvato.soundtrack) setSoundtrack(sognoSalvato.soundtrack);
       if (sognoSalvato.soundMood) setSoundMood(sognoSalvato.soundMood);
+      if (sognoSalvato.emojiTranslation) setEmojiTranslation(sognoSalvato.emojiTranslation);
     } 
     // Se viene dal database, mappa content a testo e story a racconto
     else if (sognoSalvato.content) {
@@ -196,6 +221,7 @@ export default function Home() {
       }
       if (sognoSalvato.soundtrack) setSoundtrack(sognoSalvato.soundtrack);
       if (sognoSalvato.soundMood) setSoundMood(sognoSalvato.soundMood);
+      if (sognoSalvato.emojiTranslation) setEmojiTranslation(sognoSalvato.emojiTranslation);
     }
   };
 
@@ -386,6 +412,35 @@ export default function Home() {
                       }
                     }}
                   />
+
+                  <div className="mt-4">
+                    <DreamEmojiTranslator 
+                      dreamContent={sogno}
+                      emojiTranslation={emojiTranslation}
+                      onEmojiTranslationChange={(newEmojiTranslation) => {
+                        setEmojiTranslation(newEmojiTranslation);
+                        
+                        // Trova il sogno corrente dal database e aggiornalo se esiste
+                        const currentDream = sogniSalvati.find((d: any) => 
+                          (d.content === sogno && d.story === racconto) || 
+                          (d.testo === sogno && d.racconto === racconto)
+                        );
+                        if (currentDream && currentDream.id) {
+                          saveDreamMutation.mutate({
+                            id: currentDream.id,
+                            testo: sogno,
+                            racconto: racconto,
+                            categoria: categoria,
+                            emozione: emozione,
+                            preferito: preferito,
+                            soundtrack: soundtrack,
+                            soundMood: soundMood,
+                            emojiTranslation: newEmojiTranslation
+                          });
+                        }
+                      }}
+                    />
+                  </div>
                   
                   <DreamShare 
                     dreamContent={sogno}
