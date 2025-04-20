@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import passport from "passport";
 import { storage } from "./storage";
-import { generateStoryFromDream, interpretDream } from "./gemini";
+import { generateStoryFromDream } from "./gemini";
 import { insertDreamSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -113,34 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Endpoint per l'interpretazione dei sogni
-  app.post("/api/interpreta-sogno", async (req, res) => {
-    try {
-      const { sogno } = req.body;
-      
-      if (!sogno || typeof sogno !== "string" || sogno.trim() === "") {
-        return res.status(400).json({ error: "Il contenuto del sogno è richiesto" });
-      }
-      
-      // Verifica che la chiave API di Gemini sia presente
-      if (!process.env.GEMINI_API_KEY) {
-        return res.status(503).json({ 
-          error: "Servizio di interpretazione non disponibile. Chiave API mancante." 
-        });
-      }
-      
-      const result = await interpretDream(sogno);
-      
-      // Restituisce l'interpretazione del sogno
-      return res.status(200).json(result);
-    } catch (error: any) {
-      console.error("Error interpreting dream:", error);
-      return res.status(500).json({ 
-        error: "Si è verificato un errore nell'interpretazione del sogno", 
-        details: error.message 
-      });
-    }
-  });
+
 
   // API per i sogni (protette da autenticazione)
   
