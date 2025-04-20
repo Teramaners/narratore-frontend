@@ -1,7 +1,13 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateStoryFromDream, generateEmojiTranslation, generateImageFromDream, analyzeEmotionsInDream } from "./gemini";
+import { 
+  generateStoryFromDream, 
+  generateEmojiTranslation, 
+  generateImageFromDream, 
+  analyzeEmotionsInDream,
+  artStyles 
+} from "./gemini";
 import { insertDreamSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
@@ -77,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint per la generazione di immagini dai sogni
   app.post("/api/genera-immagine", async (req, res) => {
     try {
-      const { sogno, racconto } = req.body;
+      const { sogno, racconto, stileArtistico } = req.body;
       
       if (!sogno || typeof sogno !== "string" || sogno.trim() === "") {
         return res.status(400).json({ error: "Il contenuto del sogno è richiesto" });
@@ -87,10 +93,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Il racconto del sogno è richiesto" });
       }
 
-      const result = await generateImageFromDream(sogno, racconto);
+      // Genera l'immagine usando lo stile artistico richiesto (o il default)
+      const result = await generateImageFromDream(sogno, racconto, stileArtistico);
       
-      // Restituisce l'URL dell'immagine generata
-      return res.status(200).json({ imageUrl: result.imageUrl });
+      // Restituisce i dati dell'immagine generata
+      return res.status(200).json({
+        imageUrl: result.imageUrl,
+        description: result.description
+      });
     } catch (error: any) {
       console.error("Error generating dream image:", error);
       return res.status(500).json({ 
@@ -98,6 +108,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         details: error.message 
       });
     }
+  });
+  
+  // Endpoint per ottenere gli stili artistici disponibili
+  app.get("/api/stili-artistici", (req, res) => {
+    return res.status(200).json(artStyles);
   });
   
   // Serviamo la cartella delle immagini generate
