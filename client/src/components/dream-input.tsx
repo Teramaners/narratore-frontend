@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Send, Undo2 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DreamVoiceInput } from "./dream-voice-input";
 
 interface DreamInputProps {
   onSubmit: (dream: string) => Promise<void>;
@@ -21,11 +23,17 @@ export function DreamInput({
   currentDream,
   setCurrentDream,
 }: DreamInputProps) {
+  const [isListening, setIsListening] = useState(false);
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (currentDream.trim()) {
       onSubmit(currentDream);
     }
+  };
+  
+  const handleTranscription = (text: string) => {
+    setCurrentDream(text);
   };
 
   return (
@@ -37,6 +45,12 @@ export function DreamInput({
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent>
+          <DreamVoiceInput
+            onTranscription={handleTranscription}
+            isListening={isListening}
+            setIsListening={setIsListening}
+            disabled={loading}
+          />
           <Textarea
             placeholder="Descrivi il tuo sogno in dettaglio..."
             className="min-h-[120px] dark:bg-slate-800/70 light:bg-white/70"

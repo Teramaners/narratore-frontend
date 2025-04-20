@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { DreamVoiceOutput } from "./dream-voice-output";
 
 interface StoryDisplayProps {
   story: string;
@@ -59,6 +60,13 @@ export function StoryDisplay({ story }: StoryDisplayProps) {
           ))}
         </div>
       </CardContent>
+      <CardFooter className="border-t pt-4">
+        <DreamVoiceOutput 
+          text={story} 
+          title="Ascolto della storia" 
+          lang="it-IT" 
+        />
+      </CardFooter>
     </Card>
   );
 }
