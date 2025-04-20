@@ -56,6 +56,9 @@ export default function Home() {
       preferito?: boolean,
       soundtrack?: string,
       soundMood?: string,
+      interpretation?: string,
+      symbolism?: string,
+      insight?: string,
       id?: number // Per gli aggiornamenti
     }) => {
       // Se c'è un ID, aggiorna un sogno esistente
@@ -65,7 +68,10 @@ export default function Home() {
           emotion: newDream.emozione || 'neutro',
           isFavorite: newDream.preferito ? 1 : 0,   // Converti booleano in intero (0/1)
           soundtrack: newDream.soundtrack,
-          soundMood: newDream.soundMood
+          soundMood: newDream.soundMood,
+          interpretation: newDream.interpretation,
+          symbolism: newDream.symbolism,
+          insight: newDream.insight
         });
         return response.json();
       }
@@ -79,7 +85,10 @@ export default function Home() {
         emotion: newDream.emozione || 'neutro',
         isFavorite: newDream.preferito ? 1 : 0,   // Converti booleano in intero (0/1)
         soundtrack: newDream.soundtrack,
-        soundMood: newDream.soundMood
+        soundMood: newDream.soundMood,
+        interpretation: newDream.interpretation,
+        symbolism: newDream.symbolism,
+        insight: newDream.insight
       });
       return response.json();
     },
@@ -177,6 +186,9 @@ export default function Home() {
     setPreferito(false);
     setSoundtrack("");
     setSoundMood("");
+    setInterpretation("");
+    setSymbolism("");
+    setInsight("");
     setError("");
   };
 
@@ -192,6 +204,9 @@ export default function Home() {
       if (sognoSalvato.preferito !== undefined) setPreferito(sognoSalvato.preferito);
       if (sognoSalvato.soundtrack) setSoundtrack(sognoSalvato.soundtrack);
       if (sognoSalvato.soundMood) setSoundMood(sognoSalvato.soundMood);
+      if (sognoSalvato.interpretation) setInterpretation(sognoSalvato.interpretation);
+      if (sognoSalvato.symbolism) setSymbolism(sognoSalvato.symbolism);
+      if (sognoSalvato.insight) setInsight(sognoSalvato.insight);
     } 
     // Se viene dal database, mappa content a testo e story a racconto
     else if (sognoSalvato.content) {
@@ -208,6 +223,9 @@ export default function Home() {
       }
       if (sognoSalvato.soundtrack) setSoundtrack(sognoSalvato.soundtrack);
       if (sognoSalvato.soundMood) setSoundMood(sognoSalvato.soundMood);
+      if (sognoSalvato.interpretation) setInterpretation(sognoSalvato.interpretation);
+      if (sognoSalvato.symbolism) setSymbolism(sognoSalvato.symbolism);
+      if (sognoSalvato.insight) setInsight(sognoSalvato.insight);
     }
   };
 
@@ -382,6 +400,39 @@ export default function Home() {
                     dreamStory={racconto}
                     category={categoria}
                   />
+                  
+                  <DreamInterpretation
+                    dreamContent={sogno}
+                    interpretation={interpretation}
+                    symbolism={symbolism}
+                    insight={insight}
+                    onInterpretationChange={(newInterpretation, newSymbolism, newInsight) => {
+                      setInterpretation(newInterpretation);
+                      setSymbolism(newSymbolism);
+                      setInsight(newInsight);
+                      
+                      // Trova il sogno corrente dal database e aggiornalo se esiste
+                      const currentDream = sogniSalvati.find((d: any) => 
+                        (d.content === sogno && d.story === racconto) || 
+                        (d.testo === sogno && d.racconto === racconto)
+                      );
+                      if (currentDream && currentDream.id) {
+                        saveDreamMutation.mutate({
+                          id: currentDream.id,
+                          testo: sogno,
+                          racconto: racconto,
+                          categoria: categoria,
+                          emozione: emozione,
+                          preferito: preferito,
+                          soundtrack: soundtrack,
+                          soundMood: soundMood,
+                          interpretation: newInterpretation,
+                          symbolism: newSymbolism,
+                          insight: newInsight
+                        });
+                      }
+                    }}
+                  />
                 </div>
               </>
             )}
@@ -390,7 +441,7 @@ export default function Home() {
         
         {/* Footer */}
         <div className="mt-8 text-center text-sm dark:text-purple-300 light:text-indigo-500">
-          <p>Narratore di Sogni © 2025 - Powered by Gemini AI</p>
+          <p>Narratore di Sogni © 2025 - Powered by Gemini & Claude AI</p>
           <p className="mt-1">Trasforma i tuoi sogni in storie uniche con l'intelligenza artificiale</p>
         </div>
       </div>
