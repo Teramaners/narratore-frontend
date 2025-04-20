@@ -33,7 +33,7 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET || "narratore-di-sogni-secret",
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore,
+    // Non usiamo lo storage.sessionStore che causa problemi
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 giorni
     }
