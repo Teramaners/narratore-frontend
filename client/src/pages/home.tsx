@@ -10,6 +10,7 @@ import { DreamShare } from '@/components/dream-share';
 import { DreamTimeline } from '@/components/dream-timeline';
 import { DreamEmojiTranslator } from '@/components/dream-emoji-translator';
 import { DreamImageGenerator } from '@/components/dream-image-generator';
+import { DreamASMRGenerator } from '@/components/dream-asmr-generator';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SavedDream } from '@/lib/localStorage';
@@ -478,6 +479,14 @@ export default function Home() {
                           });
                         }
                       }}
+                    />
+                  </div>
+                  
+                  <div className="mt-4">
+                    <DreamASMRGenerator
+                      dreamContent={sogno}
+                      dreamStory={racconto}
+                      emotion={emozione}
                     />
                   </div>
                   
