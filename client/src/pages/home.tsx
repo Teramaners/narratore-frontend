@@ -441,7 +441,7 @@ export default function Home() {
         
         {/* Footer */}
         <div className="mt-8 text-center text-sm dark:text-purple-300 light:text-indigo-500">
-          <p>Narratore di Sogni © 2025 - Powered by Gemini & Claude AI</p>
+          <p>Narratore di Sogni © 2025 - Powered by Gemini AI</p>
           <p className="mt-1">Trasforma i tuoi sogni in storie uniche con l'intelligenza artificiale</p>
         </div>
       </div>
