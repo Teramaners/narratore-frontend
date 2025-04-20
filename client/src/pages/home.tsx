@@ -9,6 +9,7 @@ import { DreamSoundtrack } from '@/components/dream-soundtrack';
 import { DreamShare } from '@/components/dream-share';
 import { DreamTimeline } from '@/components/dream-timeline';
 import { DreamEmojiTranslator } from '@/components/dream-emoji-translator';
+import { DreamImageGenerator } from '@/components/dream-image-generator';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SavedDream } from '@/lib/localStorage';
@@ -29,6 +30,7 @@ export default function Home() {
   const [soundtrack, setSoundtrack] = useState<string>("");
   const [soundMood, setSoundMood] = useState<string>("");
   const [emojiTranslation, setEmojiTranslation] = useState<string>("");
+  const [dreamImageUrl, setDreamImageUrl] = useState<string>("");
   const [generationLoading, setGenerationLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -57,6 +59,7 @@ export default function Home() {
       soundtrack?: string,
       soundMood?: string,
       emojiTranslation?: string,
+      dreamImageUrl?: string,
       id?: number // Per gli aggiornamenti
     }) => {
       // Se c'è un ID, aggiorna un sogno esistente
@@ -67,7 +70,8 @@ export default function Home() {
           isFavorite: newDream.preferito ? 1 : 0,   // Converti booleano in intero (0/1)
           soundtrack: newDream.soundtrack,
           soundMood: newDream.soundMood,
-          emojiTranslation: newDream.emojiTranslation
+          emojiTranslation: newDream.emojiTranslation,
+          dreamImageUrl: newDream.dreamImageUrl
         });
         return response.json();
       }
@@ -82,7 +86,8 @@ export default function Home() {
         isFavorite: newDream.preferito ? 1 : 0,   // Converti booleano in intero (0/1)
         soundtrack: newDream.soundtrack,
         soundMood: newDream.soundMood,
-        emojiTranslation: newDream.emojiTranslation
+        emojiTranslation: newDream.emojiTranslation,
+        dreamImageUrl: newDream.dreamImageUrl
       });
       return response.json();
     },
@@ -189,6 +194,7 @@ export default function Home() {
     setSoundtrack("");
     setSoundMood("");
     setEmojiTranslation("");
+    setDreamImageUrl("");
     setError("");
   };
 
@@ -205,6 +211,7 @@ export default function Home() {
       if (sognoSalvato.soundtrack) setSoundtrack(sognoSalvato.soundtrack);
       if (sognoSalvato.soundMood) setSoundMood(sognoSalvato.soundMood);
       if (sognoSalvato.emojiTranslation) setEmojiTranslation(sognoSalvato.emojiTranslation);
+      if (sognoSalvato.dreamImageUrl) setDreamImageUrl(sognoSalvato.dreamImageUrl);
     } 
     // Se viene dal database, mappa content a testo e story a racconto
     else if (sognoSalvato.content) {
@@ -222,6 +229,7 @@ export default function Home() {
       if (sognoSalvato.soundtrack) setSoundtrack(sognoSalvato.soundtrack);
       if (sognoSalvato.soundMood) setSoundMood(sognoSalvato.soundMood);
       if (sognoSalvato.emojiTranslation) setEmojiTranslation(sognoSalvato.emojiTranslation);
+      if (sognoSalvato.dreamImageUrl) setDreamImageUrl(sognoSalvato.dreamImageUrl);
     }
   };
 
@@ -436,6 +444,37 @@ export default function Home() {
                             soundtrack: soundtrack,
                             soundMood: soundMood,
                             emojiTranslation: newEmojiTranslation
+                          });
+                        }
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="mt-4">
+                    <DreamImageGenerator
+                      dreamContent={sogno}
+                      dreamStory={racconto}
+                      dreamImageUrl={dreamImageUrl}
+                      onImageUrlChange={(newImageUrl) => {
+                        setDreamImageUrl(newImageUrl);
+                        
+                        // Trova il sogno corrente dal database e aggiornalo se esiste
+                        const currentDream = sogniSalvati.find((d: any) => 
+                          (d.content === sogno && d.story === racconto) || 
+                          (d.testo === sogno && d.racconto === racconto)
+                        );
+                        if (currentDream && currentDream.id) {
+                          saveDreamMutation.mutate({
+                            id: currentDream.id,
+                            testo: sogno,
+                            racconto: racconto,
+                            categoria: categoria,
+                            emozione: emozione,
+                            preferito: preferito,
+                            soundtrack: soundtrack,
+                            soundMood: soundMood,
+                            emojiTranslation: emojiTranslation,
+                            dreamImageUrl: newImageUrl
                           });
                         }
                       }}
