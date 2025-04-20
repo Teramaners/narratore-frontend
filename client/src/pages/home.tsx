@@ -265,7 +265,7 @@ export default function Home() {
                 onCategoryChange={(cat) => {
                   setCategoria(cat);
                   // Trova il sogno corrente dal database e aggiornalo se esiste
-                  const currentDream = sogniSalvati.find(d => 
+                  const currentDream = sogniSalvati.find((d: any) => 
                     (d.content === sogno && d.story === racconto) || 
                     (d.testo === sogno && d.racconto === racconto)
                   );
@@ -283,7 +283,7 @@ export default function Home() {
                 onEmotionChange={(emoz) => {
                   setEmozione(emoz);
                   // Trova il sogno corrente dal database e aggiornalo se esiste
-                  const currentDream = sogniSalvati.find(d => 
+                  const currentDream = sogniSalvati.find((d: any) => 
                     (d.content === sogno && d.story === racconto) || 
                     (d.testo === sogno && d.racconto === racconto)
                   );
@@ -301,7 +301,7 @@ export default function Home() {
                 onFavoriteChange={(fav) => {
                   setPreferito(fav);
                   // Trova il sogno corrente dal database e aggiornalo se esiste
-                  const currentDream = sogniSalvati.find(d => 
+                  const currentDream = sogniSalvati.find((d: any) => 
                     (d.content === sogno && d.story === racconto) || 
                     (d.testo === sogno && d.racconto === racconto)
                   );
