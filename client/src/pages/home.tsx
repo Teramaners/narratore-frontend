@@ -45,16 +45,26 @@ export default function Home() {
       racconto: string,
       categoria?: string,
       emozione?: string,
-      tags?: string[],
-      preferito?: boolean
+      preferito?: boolean,
+      id?: number // Per gli aggiornamenti
     }) => {
+      // Se c'è un ID, aggiorna un sogno esistente
+      if (newDream.id) {
+        const response = await apiRequest('PUT', `/api/sogni/${newDream.id}`, {
+          category: newDream.categoria || 'non_categorizzato',
+          emotion: newDream.emozione || 'neutro',
+          isFavorite: newDream.preferito || false
+        });
+        return response.json();
+      }
+      
+      // Altrimenti crea un nuovo sogno
       // Converti i nomi dei campi da italiano a inglese per il database
       const response = await apiRequest('POST', '/api/sogni', {
         content: newDream.testo,           // 'content' nel database invece di 'testo'
         story: newDream.racconto,          // 'story' nel database invece di 'racconto'
         category: newDream.categoria || 'non_categorizzato',
         emotion: newDream.emozione || 'neutro',
-        tags: newDream.tags || [],
         isFavorite: newDream.preferito || false
       });
       return response.json();
@@ -129,7 +139,10 @@ export default function Home() {
       // Salva il sogno e la storia nel database
       await saveDreamMutation.mutateAsync({
         testo: sogno,
-        racconto: data.story || data.racconto
+        racconto: data.story || data.racconto,
+        categoria: categoria,
+        emozione: emozione,
+        preferito: preferito
       });
       
       // Ricarica la lista dei sogni
@@ -145,6 +158,9 @@ export default function Home() {
   const resetForm = () => {
     setSogno("");
     setRacconto("");
+    setCategoria("non_categorizzato");
+    setEmozione("neutro");
+    setPreferito(false);
     setError("");
   };
 
@@ -155,11 +171,23 @@ export default function Home() {
     if (sognoSalvato.testo) {
       setSogno(sognoSalvato.testo);
       setRacconto(sognoSalvato.racconto);
+      if (sognoSalvato.categoria) setCategoria(sognoSalvato.categoria);
+      if (sognoSalvato.emozione) setEmozione(sognoSalvato.emozione);
+      if (sognoSalvato.preferito !== undefined) setPreferito(sognoSalvato.preferito);
     } 
     // Se viene dal database, mappa content a testo e story a racconto
     else if (sognoSalvato.content) {
       setSogno(sognoSalvato.content);
       setRacconto(sognoSalvato.story);
+      if (sognoSalvato.category) setCategoria(sognoSalvato.category);
+      if (sognoSalvato.emotion) setEmozione(sognoSalvato.emotion);
+      if (sognoSalvato.isFavorite !== undefined) {
+        // Il database potrebbe usare 0/1 per il booleano
+        const isPreferito = typeof sognoSalvato.isFavorite === 'number' 
+          ? sognoSalvato.isFavorite > 0
+          : sognoSalvato.isFavorite;
+        setPreferito(isPreferito);
+      }
     }
   };
 
@@ -228,6 +256,68 @@ export default function Home() {
           {/* Output column */}
           <div className="w-full md:w-1/2">
             <StoryDisplay story={racconto} />
+            
+            {racconto && (
+              <DreamCategory
+                category={categoria}
+                emotion={emozione}
+                isFavorite={preferito}
+                onCategoryChange={(cat) => {
+                  setCategoria(cat);
+                  // Trova il sogno corrente dal database e aggiornalo se esiste
+                  const currentDream = sogniSalvati.find(d => 
+                    (d.content === sogno && d.story === racconto) || 
+                    (d.testo === sogno && d.racconto === racconto)
+                  );
+                  if (currentDream && currentDream.id) {
+                    saveDreamMutation.mutate({
+                      id: currentDream.id,
+                      testo: sogno,
+                      racconto: racconto,
+                      categoria: cat,
+                      emozione: emozione,
+                      preferito: preferito
+                    });
+                  }
+                }}
+                onEmotionChange={(emoz) => {
+                  setEmozione(emoz);
+                  // Trova il sogno corrente dal database e aggiornalo se esiste
+                  const currentDream = sogniSalvati.find(d => 
+                    (d.content === sogno && d.story === racconto) || 
+                    (d.testo === sogno && d.racconto === racconto)
+                  );
+                  if (currentDream && currentDream.id) {
+                    saveDreamMutation.mutate({
+                      id: currentDream.id,
+                      testo: sogno,
+                      racconto: racconto,
+                      categoria: categoria,
+                      emozione: emoz,
+                      preferito: preferito
+                    });
+                  }
+                }}
+                onFavoriteChange={(fav) => {
+                  setPreferito(fav);
+                  // Trova il sogno corrente dal database e aggiornalo se esiste
+                  const currentDream = sogniSalvati.find(d => 
+                    (d.content === sogno && d.story === racconto) || 
+                    (d.testo === sogno && d.racconto === racconto)
+                  );
+                  if (currentDream && currentDream.id) {
+                    saveDreamMutation.mutate({
+                      id: currentDream.id,
+                      testo: sogno,
+                      racconto: racconto,
+                      categoria: categoria,
+                      emozione: emozione,
+                      preferito: fav
+                    });
+                  }
+                }}
+              />
+            )}
           </div>
         </div>
         
