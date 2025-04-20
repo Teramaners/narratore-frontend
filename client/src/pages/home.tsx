@@ -7,6 +7,7 @@ import { StoryDisplay } from '@/components/story-display';
 import { DreamCategory } from '@/components/dream-category';
 import { DreamSoundtrack } from '@/components/dream-soundtrack';
 import { DreamShare } from '@/components/dream-share';
+import { DreamInterpretation } from '@/components/dream-interpretation';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SavedDream } from '@/lib/localStorage';
@@ -25,6 +26,9 @@ export default function Home() {
   const [preferito, setPreferito] = useState(false);
   const [soundtrack, setSoundtrack] = useState<string>("");
   const [soundMood, setSoundMood] = useState<string>("");
+  const [interpretation, setInterpretation] = useState<string>("");
+  const [symbolism, setSymbolism] = useState<string>("");
+  const [insight, setInsight] = useState<string>("");
   const [generationLoading, setGenerationLoading] = useState(false);
   const [error, setError] = useState("");
 

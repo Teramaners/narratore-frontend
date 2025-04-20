@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import passport from "passport";
 import { storage } from "./storage";
 import { generateStoryFromDream } from "./gemini";
+import { interpretDream } from "./anthropic";
 import { insertDreamSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -108,6 +109,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error generating story:", error);
       return res.status(500).json({ 
         error: "Si è verificato un errore nella generazione del racconto", 
+        details: error.message 
+      });
+    }
+  });
+  
+  // Endpoint per l'interpretazione dei sogni
+  app.post("/api/interpreta-sogno", async (req, res) => {
+    try {
+      const { sogno } = req.body;
+      
+      if (!sogno || typeof sogno !== "string" || sogno.trim() === "") {
+        return res.status(400).json({ error: "Il contenuto del sogno è richiesto" });
+      }
+      
+      // Verifica che la chiave API di Anthropic sia presente
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(503).json({ 
+          error: "Servizio di interpretazione non disponibile. Chiave API mancante." 
+        });
+      }
+      
+      const result = await interpretDream(sogno);
+      
+      // Restituisce l'interpretazione del sogno
+      return res.status(200).json(result);
+    } catch (error: any) {
+      console.error("Error interpreting dream:", error);
+      return res.status(500).json({ 
+        error: "Si è verificato un errore nell'interpretazione del sogno", 
         details: error.message 
       });
     }

@@ -34,6 +34,9 @@ export const dreams = pgTable("dreams", {
   isFavorite: integer("is_favorite").default(0), // Useremo 0 per false, 1 per true
   soundtrack: text("soundtrack"), // Tema musicale associato al sogno
   soundMood: text("sound_mood"), // Umore musicale (allegro, misterioso, inquietante, ecc.)
+  interpretation: text("interpretation"), // Interpretazione del sogno fornita dall'AI
+  symbolism: text("symbolism"), // Simbolismo presente nel sogno identificato dall'AI
+  insight: text("insight"), // Approfondimento psicologico sul sogno
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -53,6 +56,9 @@ export const insertDreamSchema = createInsertSchema(dreams).pick({
   isFavorite: true,
   soundtrack: true,
   soundMood: true,
+  interpretation: true,
+  symbolism: true,
+  insight: true,
 });
 
 export type InsertDream = z.infer<typeof insertDreamSchema>;

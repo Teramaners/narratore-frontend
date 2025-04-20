@@ -2,24 +2,86 @@ import Anthropic from '@anthropic-ai/sdk';
 
 // the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || "default_key",
+  apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-interface StoryResponse {
-  story: string;
+export interface DreamInterpretationResponse {
+  interpretation: string;
+  symbolism: string;
+  insight: string;
 }
 
-export async function generateStoryFromDream(dream: string): Promise<StoryResponse> {
+export async function interpretDream(dream: string): Promise<DreamInterpretationResponse> {
   try {
+    const systemPrompt = `Sei un esperto di psicologia dei sogni che fornisce interpretazioni profonde e significative.
+    Analizza il sogno fornito dall'utente e restituisci tre tipi di informazioni:
+    
+    1. Una interpretazione generale del sogno che spiega i possibili significati in modo chiaro.
+    2. Un'analisi dei simboli presenti nel sogno e il loro significato nel contesto culturale e psicologico.
+    3. Un approfondimento psicologico che colleghi i temi del sogno alla vita dell'utente.
+    
+    Mantieni un tono professionale ma accessibile, evitando sia un linguaggio troppo tecnico sia eccessivamente new age.
+    Sii rispettoso della persona e offri diverse prospettive di interpretazione senza imporre una singola verità.
+    
+    Rispondi in italiano con una struttura JSON come questa:
+    {
+      "interpretation": "interpretazione generale del sogno...",
+      "symbolism": "analisi dei simboli presenti nel sogno...",
+      "insight": "approfondimento psicologico sul sogno..."
+    }
+    `;
+
     const message = await anthropic.messages.create({
-      max_tokens: 2000,
       model: 'claude-3-7-sonnet-20250219',
-      system: "You are 'Narratore di Sogni', an expert literary storyteller. Your task is to transform a user's dream description into a beautiful, professionally written literary short story. Follow these guidelines: 1) Maintain the core elements and imagery of the dream, 2) Add literary structure, characters, and narrative flow, 3) Use vivid descriptions and elegant language, 4) Create a clear beginning, middle and end, 5) Add a creative title at the beginning. The tone should be mystical, evocative and dreamlike. Maximum length should be about 500-600 words.",
-      messages: [{ role: 'user', content: dream }],
+      max_tokens: 1500,
+      system: systemPrompt,
+      messages: [
+        { role: 'user', content: `Ecco il mio sogno, puoi interpretarlo? "${dream}"` }
+      ],
+      temperature: 0.7,
     });
 
-    return { story: message.content[0].text };
-  } catch (error: any) {
-    throw new Error(`Claude API error: ${error?.message || 'Unknown error'}`);
+    // Estrai il contenuto della risposta
+    const contentBlock = message.content[0];
+    // Verifica che il blocco di contenuto sia di tipo testo
+    if (contentBlock.type !== 'text') {
+      throw new Error('La risposta non contiene testo');
+    }
+    const responseText = contentBlock.text;
+    
+    try {
+      // Tenta di analizzare la risposta come JSON
+      const parsedResponse = JSON.parse(responseText);
+      
+      // Verifica che la risposta contenga i campi necessari
+      if (!parsedResponse.interpretation || !parsedResponse.symbolism || !parsedResponse.insight) {
+        throw new Error('La risposta non contiene tutti i campi necessari');
+      }
+      
+      return {
+        interpretation: parsedResponse.interpretation,
+        symbolism: parsedResponse.symbolism,
+        insight: parsedResponse.insight
+      };
+    } catch (error) {
+      console.error('Errore nel parsing della risposta JSON:', error);
+      
+      // Fallback: tenta di estrarre manualmente le sezioni
+      const interpretationMatch = responseText.match(/interpretation["']:\s*["']([^"']*)["']/);
+      const symbolismMatch = responseText.match(/symbolism["']:\s*["']([^"']*)["']/);
+      const insightMatch = responseText.match(/insight["']:\s*["']([^"']*)["']/);
+      
+      return {
+        interpretation: interpretationMatch ? interpretationMatch[1] : 
+          'Non è stato possibile generare un\'interpretazione. Riprova più tardi.',
+        symbolism: symbolismMatch ? symbolismMatch[1] : 
+          'Non è stato possibile identificare i simboli. Riprova più tardi.',
+        insight: insightMatch ? insightMatch[1] : 
+          'Non è stato possibile generare un approfondimento. Riprova più tardi.'
+      };
+    }
+  } catch (error) {
+    console.error('Errore nella richiesta ad Anthropic:', error);
+    throw new Error('Errore nell\'interpretazione del sogno. Si prega di riprovare più tardi.');
   }
 }
