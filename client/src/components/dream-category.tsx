@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Heart, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EmotionGradient } from './emotion-gradient';
 
 interface DreamCategoryProps {
   category: string;
@@ -87,6 +88,24 @@ export function DreamCategory({
               ))}
             </SelectContent>
           </Select>
+        </div>
+      </div>
+      
+      {/* Visualizzazione gradiente emozione */}
+      <div className="mt-4">
+        <Label className="block mb-2">Visualizzazione emotiva</Label>
+        <div className="flex justify-start">
+          <EmotionGradient 
+            emotion={emotion === 'felice' ? 'happy' : 
+                     emotion === 'triste' ? 'sad' : 
+                     emotion === 'curioso' ? 'curious' : 
+                     emotion === 'spaventato' ? 'scared' : 
+                     emotion === 'eccitato' ? 'excited' : 
+                     emotion === 'confuso' ? 'confused' : 
+                     emotion === 'neutro' ? 'neutral' : 'neutral'
+                    } 
+            className="h-8 w-full rounded-md"
+          />
         </div>
       </div>
 
