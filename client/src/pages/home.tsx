@@ -11,6 +11,7 @@ import { DreamTimeline } from '@/components/dream-timeline';
 import { DreamEmojiTranslator } from '@/components/dream-emoji-translator';
 import { DreamImageGenerator } from '@/components/dream-image-generator';
 import { DreamASMRGenerator } from '@/components/dream-asmr-generator';
+import { DreamEmotionAnalysis } from '@/components/dream-emotion-analysis';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SavedDream } from '@/lib/localStorage';
@@ -487,6 +488,13 @@ export default function Home() {
                       dreamContent={sogno}
                       dreamStory={racconto}
                       emotion={emozione}
+                    />
+                  </div>
+                  
+                  <div className="mt-4">
+                    <DreamEmotionAnalysis
+                      dreamContent={sogno}
+                      dreamStory={racconto}
                     />
                   </div>
                   

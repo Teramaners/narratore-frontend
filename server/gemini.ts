@@ -153,7 +153,7 @@ export async function analyzeEmotionsInDream(dream: string, story: string): Prom
       }
       
       // Normalizza i dati di intensità per assicurarsi che siano numeri
-      emotionsData.emotions = emotionsData.emotions.map(emotion => ({
+      emotionsData.emotions = emotionsData.emotions.map((emotion: any) => ({
         ...emotion,
         intensity: typeof emotion.intensity === 'string' 
           ? parseFloat(emotion.intensity) 
