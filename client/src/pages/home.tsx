@@ -36,11 +36,22 @@ export default function Home() {
 
   // Mutation per salvare un nuovo sogno
   const saveDreamMutation = useMutation({
-    mutationFn: async (newDream: { testo: string, racconto: string }) => {
+    mutationFn: async (newDream: { 
+      testo: string, 
+      racconto: string,
+      categoria?: string,
+      emozione?: string,
+      tags?: string[],
+      preferito?: boolean
+    }) => {
       // Converti i nomi dei campi da italiano a inglese per il database
       const response = await apiRequest('POST', '/api/sogni', {
-        content: newDream.testo,    // 'content' nel database invece di 'testo'
-        story: newDream.racconto    // 'story' nel database invece di 'racconto'
+        content: newDream.testo,           // 'content' nel database invece di 'testo'
+        story: newDream.racconto,          // 'story' nel database invece di 'racconto'
+        category: newDream.categoria || 'non_categorizzato',
+        emotion: newDream.emozione || 'neutro',
+        tags: newDream.tags || [],
+        isFavorite: newDream.preferito || false
       });
       return response.json();
     },

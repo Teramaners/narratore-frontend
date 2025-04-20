@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -29,6 +29,10 @@ export const dreams = pgTable("dreams", {
   userId: integer("user_id").references(() => users.id),
   content: text("content").notNull(),
   story: text("story").notNull(),
+  category: text("category").default("non_categorizzato"),
+  emotion: text("emotion").default("neutro"),
+  tags: text("tags").array(),
+  isFavorite: boolean("is_favorite"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -43,6 +47,10 @@ export const insertDreamSchema = createInsertSchema(dreams).pick({
   userId: true,
   content: true,
   story: true,
+  category: true,
+  emotion: true,
+  tags: true,
+  isFavorite: true,
 });
 
 export type InsertDream = z.infer<typeof insertDreamSchema>;
