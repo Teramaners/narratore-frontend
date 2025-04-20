@@ -13,8 +13,15 @@ interface StoryResponse {
   story: string;
 }
 
+interface EmojiExplanation {
+  emoji: string;
+  meaning: string; // Significato dell'emoji nel contesto del sogno
+}
+
 interface EmojiResponse {
   emojiTranslation: string;
+  emojiExplanations?: EmojiExplanation[];
+  emojiMood?: string; // Tono emotivo generale della sequenza
 }
 
 interface ImageResponse {
@@ -60,11 +67,37 @@ export async function generateStoryFromDream(dream: string): Promise<StoryRespon
 
 export async function generateEmojiTranslation(dream: string): Promise<EmojiResponse> {
   try {
-    // Utilizza il modello gemini-1.5-pro-latest
+    // Utilizza il modello gemini-1.5-pro-latest per generare sequenza di emoji
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
 
-    // Sistema prompt per la generazione di emoji dai sogni
-    const systemPrompt = "Sei 'Traduttore di Sogni in Emoji', un esperto in trasformare i sogni in sequenze di emoji significative e personalizzate. Il tuo compito è prendere la descrizione del sogno dell'utente e creare una traduzione in emoji che catturi l'essenza, le emozioni e i simboli principali del sogno. Segui queste linee guida: 1) Analizza gli elementi principali del sogno, 2) Seleziona emoji che rappresentino sia gli elementi concreti che le emozioni del sogno, 3) Crea una sequenza di 8-15 emoji che racconti il sogno in modo visivo, 4) Assicurati che le emoji siano in un ordine logico che rifletta la narrazione del sogno, 5) Includi sempre emoji che catturino il tono emotivo del sogno. Restituisci SOLO la sequenza di emoji, niente testo o spiegazioni.";
+    // Sistema prompt per la generazione di emoji dai sogni con spiegazioni
+    const systemPrompt = `Sei 'Traduttore di Sogni in Emoji', un esperto in trasformare i sogni in sequenze di emoji significative e personalizzate.
+
+Il tuo compito è prendere la descrizione del sogno dell'utente e creare:
+1. Una sequenza di 8-15 emoji che racconti il sogno in modo visivo
+2. Una spiegazione concisa per ciascuna emoji scelta
+3. Un'interpretazione generale del tono emotivo della sequenza
+
+Segui queste linee guida:
+- Analizza attentamente gli elementi principali e le emozioni del sogno
+- Seleziona emoji che rappresentino sia gli elementi concreti che i temi astratti
+- Assicurati che le emoji siano in un ordine logico che rifletta la narrazione del sogno
+- Aggiungi emoji che catturino il tono emotivo generale
+- Spiega in modo semplice perché hai scelto ciascuna emoji e cosa rappresenta nel contesto
+
+Restituisci la risposta in formato JSON con questa struttura:
+{
+  "emojiTranslation": "🌊🏄‍♂️🌪️🏝️👨‍👩‍👧‍👦🌅",
+  "emojiExplanations": [
+    {
+      "emoji": "🌊",
+      "meaning": "Rappresenta l'oceano nel sogno e simboleggia l'inconscio o le emozioni profonde"
+    },
+    // altre spiegazioni emoji
+  ],
+  "emojiMood": "Questo sogno ha un tono prevalentemente [avventuroso/pacifica/inquietante/ecc] con elementi di [emozione]"
+}
+`;
 
     // Generate content
     const result = await model.generateContent([
@@ -73,10 +106,41 @@ export async function generateEmojiTranslation(dream: string): Promise<EmojiResp
     ]);
     
     const response = result.response;
-    const emojiText = response.text().trim();
+    const responseText = response.text().trim();
 
-    return { emojiTranslation: emojiText };
+    // Estrai il JSON dalla risposta (potrebbe essere circondato da backtick o altro)
+    let jsonText = responseText;
+    const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonMatch && jsonMatch[1]) {
+      jsonText = jsonMatch[1].trim();
+    }
+
+    try {
+      // Parsa il JSON
+      const emojiData = JSON.parse(jsonText);
+      
+      // Validazione basilare
+      if (!emojiData.emojiTranslation) {
+        // Fallback nel caso il formato JSON non sia rispettato
+        return { emojiTranslation: responseText.replace(/[*_`]|```json|```/g, '').trim() };
+      }
+      
+      return {
+        emojiTranslation: emojiData.emojiTranslation,
+        emojiExplanations: emojiData.emojiExplanations || [],
+        emojiMood: emojiData.emojiMood
+      };
+    } catch (jsonError) {
+      console.error('Errore nel parsing JSON delle emoji:', jsonError, 'Testo ricevuto:', jsonText);
+      
+      // Fallback: estrai solo le emoji dalla risposta
+      const emojis = responseText.match(/[\p{Emoji}\u200d⚧⚕⚜♾♻☮☯☦☪☸☦⚛🛐⚖◽◾]/gu);
+      return { 
+        emojiTranslation: emojis ? emojis.join('') : '🤔' 
+      };
+    }
   } catch (error: any) {
+    console.error("Error generating emoji translation:", error);
     throw new Error(`Gemini API error: ${error?.message || 'Unknown error'}`);
   }
 }

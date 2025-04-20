@@ -58,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Endpoint per la traduzione del sogno in emoji
+  // Endpoint per la traduzione del sogno in emoji con spiegazioni
   app.post("/api/genera-emoji", async (req, res) => {
     try {
       const { sogno } = req.body;
@@ -69,8 +69,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const result = await generateEmojiTranslation(sogno);
       
-      // Restituisce la traduzione emoji
-      return res.status(200).json({ emojiTranslation: result.emojiTranslation });
+      // Restituisce tutti i dati della traduzione emoji
+      return res.status(200).json({
+        emojiTranslation: result.emojiTranslation,
+        emojiExplanations: result.emojiExplanations || [],
+        emojiMood: result.emojiMood || ""
+      });
     } catch (error: any) {
       console.error("Error generating emoji translation:", error);
       return res.status(500).json({ 

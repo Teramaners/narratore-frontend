@@ -1,0 +1,202 @@
+
+    <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        
+        <filter id="magicGlow" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="blur" />
+          <feColorMatrix in="blur" mode="matrix" values="
+            1 0 0 0 0
+            0 1 0 0 0
+            0 0 1 0 0
+            0 0 0 30 -10
+          " result="magicGlow" />
+          <feComposite in="SourceGraphic" in2="magicGlow" operator="over" />
+        </filter>
+        <filter id="starlight">
+          <feGaussianBlur stdDeviation="2.5" />
+          <feColorMatrix type="matrix" values="
+            1 0 0 0 1
+            0 1 0 0 1
+            0 0 1 0 1
+            0 0 0 15 -6
+          "/>
+        </filter>
+        <radialGradient id="fantasy-sky" cx="50%" cy="30%" r="80%" fx="50%" fy="30%">
+          <stop offset="0%" stop-color="hsl(296, 95%, 85%)" stop-opacity="0.7"/>
+          <stop offset="40%" stop-color="hsl(316, 80%, 40%)" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="hsl(316, 80%, 40%)" stop-opacity="1"/>
+        </radialGradient>
+        <linearGradient id="fantasy-ground" x1="0%" y1="60%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="hsl(116, 85%, 60%)" />
+          <stop offset="100%" stop-color="hsl(146, 90%, 65%)" />
+        </linearGradient>
+      
+      </defs>
+      
+        <rect width="400" height="400" fill="url(#fantasy-sky)" />
+        <circle cx="300" cy="100" r="40" fill="hsl(296, 95%, 85%)" opacity="0.9" filter="url(#magicGlow)" />
+      
+
+          <circle cx="116" cy="124" r="1" fill="white" opacity="0.75" filter="url(#starlight)" />
+        
+
+          <circle cx="124" cy="5" r="2" fill="white" opacity="1" filter="url(#starlight)" />
+        
+
+          <circle cx="205" cy="14" r="1" fill="white" opacity="0.75" filter="url(#starlight)" />
+        
+
+          <circle cx="214" cy="85" r="3" fill="white" opacity="1.25" filter="url(#starlight)" />
+        
+
+          <circle cx="85" cy="35" r="3" fill="white" opacity="1.25" filter="url(#starlight)" />
+        
+
+          <circle cx="235" cy="85" r="3" fill="white" opacity="1.25" filter="url(#starlight)" />
+        
+
+          <circle cx="85" cy="16" r="1" fill="white" opacity="0.75" filter="url(#starlight)" />
+        
+
+          <circle cx="16" cy="35" r="1" fill="white" opacity="0.75" filter="url(#starlight)" />
+        
+
+          <circle cx="35" cy="121" r="1" fill="white" opacity="0.75" filter="url(#starlight)" />
+        
+
+          <circle cx="121" cy="70" r="1" fill="white" opacity="0.75" filter="url(#starlight)" />
+        
+
+          <circle cx="70" cy="174" r="3" fill="white" opacity="1.25" filter="url(#starlight)" />
+        
+
+          <circle cx="174" cy="183" r="2" fill="white" opacity="1" filter="url(#starlight)" />
+        
+
+          <circle cx="183" cy="44" r="1" fill="white" opacity="0.75" filter="url(#starlight)" />
+        
+
+          <circle cx="44" cy="192" r="1" fill="white" opacity="0.75" filter="url(#starlight)" />
+        
+
+          <circle cx="192" cy="156" r="1" fill="white" opacity="0.75" filter="url(#starlight)" />
+        
+
+          <circle cx="156" cy="NaN" r="NaN" fill="white" opacity="NaN" filter="url(#starlight)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="white" opacity="NaN" filter="url(#starlight)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="white" opacity="NaN" filter="url(#starlight)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="white" opacity="NaN" filter="url(#starlight)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="white" opacity="NaN" filter="url(#starlight)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="white" opacity="NaN" filter="url(#starlight)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="white" opacity="NaN" filter="url(#starlight)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="white" opacity="NaN" filter="url(#starlight)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="white" opacity="NaN" filter="url(#starlight)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="white" opacity="NaN" filter="url(#starlight)" />
+        
+
+        <path d="M0,400 L0,300 Q50,200 100,250 Q150,300 200,200 Q250,100 300,180 Q350,260 400,220 L400,400 Z" 
+                fill="url(#fantasy-ground)" />
+      
+
+        <g transform="translate(216, 280) scale(0.6)">
+          <rect x="-25" y="-120" width="50" height="120" fill="hsl(176, 95%, 70%)" />
+          <polygon points="-35,-120 35,-120 0,-160" fill="hsl(176, 95%, 70%)" />
+          <rect x="-35" y="-45" width="70" height="45" fill="hsl(176, 95%, 70%)" />
+          <rect x="-10" y="-10" width="20" height="10" fill="black" />
+          <circle cx="0" cy="-80" r="10" fill="hsl(46, 100%, 75%)" filter="url(#magicGlow)" />
+        </g>
+      
+
+          <circle cx="2" cy="205" r="6" fill="hsl(46, 100%, 75%)" 
+                  opacity="0.8999999999999999" filter="url(#magicGlow)" />
+        
+
+          <circle cx="121" cy="220" r="8" fill="hsl(46, 100%, 75%)" 
+                  opacity="1" filter="url(#magicGlow)" />
+        
+
+          <circle cx="106" cy="385" r="4" fill="hsl(46, 100%, 75%)" 
+                  opacity="0.8" filter="url(#magicGlow)" />
+        
+
+          <circle cx="183" cy="194" r="2" fill="hsl(46, 100%, 75%)" 
+                  opacity="0.7" filter="url(#magicGlow)" />
+        
+
+          <circle cx="204" cy="159" r="6" fill="hsl(46, 100%, 75%)" 
+                  opacity="0.8999999999999999" filter="url(#magicGlow)" />
+        
+
+          <circle cx="156" cy="NaN" r="NaN" fill="hsl(46, 100%, 75%)" 
+                  opacity="NaN" filter="url(#magicGlow)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="hsl(46, 100%, 75%)" 
+                  opacity="NaN" filter="url(#magicGlow)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="hsl(46, 100%, 75%)" 
+                  opacity="NaN" filter="url(#magicGlow)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="hsl(46, 100%, 75%)" 
+                  opacity="NaN" filter="url(#magicGlow)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="hsl(46, 100%, 75%)" 
+                  opacity="NaN" filter="url(#magicGlow)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="hsl(46, 100%, 75%)" 
+                  opacity="NaN" filter="url(#magicGlow)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="hsl(46, 100%, 75%)" 
+                  opacity="NaN" filter="url(#magicGlow)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="hsl(46, 100%, 75%)" 
+                  opacity="NaN" filter="url(#magicGlow)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="hsl(46, 100%, 75%)" 
+                  opacity="NaN" filter="url(#magicGlow)" />
+        
+
+          <circle cx="NaN" cy="NaN" r="NaN" fill="hsl(46, 100%, 75%)" 
+                  opacity="NaN" filter="url(#magicGlow)" />
+        
+
+        <g transform="translate(285, 135) scale(0.3)" filter="url(#magicGlow)">
+          <ellipse cx="0" cy="0" rx="20" ry="10" fill="hsl(146, 90%, 65%)" />
+          <path d="M-5,-5 Q0,-20 5,-5 Z" fill="hsl(146, 90%, 65%)" />
+          <path d="M-20,0 Q-40,-20 -30,10 Z" fill="hsl(146, 90%, 65%)" />
+          <path d="M20,0 Q40,-20 30,10 Z" fill="hsl(146, 90%, 65%)" />
+        </g>
+      
+
+        <text x="50%" y="95%" font-family="fantasy" font-size="18" fill="rgba(255, 255, 255, 0.9)" 
+              text-anchor="middle" filter="url(#starlight)">
+          Regno Onirico
+        </text>
+      
+    </svg>
+  
