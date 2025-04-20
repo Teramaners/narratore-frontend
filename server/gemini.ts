@@ -243,7 +243,7 @@ export async function generateImageFromDream(
     const imageDescription = descriptionResult.response.text().trim();
     
     // Ora generiamo l'SVG con il nostro generatore potenziato
-    const svgImage = generateSvgImageForDream(dream, imageDescription);
+    const svgImage = generateSvgImageForDream(dream, imageDescription, artStyle);
     
     // Creiamo un ID univoco per l'immagine
     const imageId = uuidv4();
@@ -267,14 +267,15 @@ export async function generateImageFromDream(
   }
 }
 
-// Funzione migliorata per generare SVG artistico basato sul sogno
-function generateSvgImageForDream(dream: string, description: string): string {
+// Funzione completamente riscritta per generare SVG artistico basato sul sogno
+function generateSvgImageForDream(dream: string, description: string, artStyle: string = "surrealista"): string {
   // Creiamo un hash dal sogno e dalla descrizione per ottenere valori pseudo-casuali ma consistenti
   const hash = createHash('md5').update(dream + description).digest('hex');
   
   // Estraiamo tonalità di colore dal hash
   const hue1 = parseInt(hash.substr(0, 2), 16) % 360;  // Tonalità primaria
   const hue2 = (hue1 + 40 + parseInt(hash.substr(2, 2), 16) % 80) % 360;  // Tonalità complementare
+  const hue3 = (hue1 + 180) % 360;  // Tonalità opposta
   const sat1 = 60 + parseInt(hash.substr(4, 2), 16) % 40;  // Saturazione
   const sat2 = 50 + parseInt(hash.substr(6, 2), 16) % 50;
   const light1 = 40 + parseInt(hash.substr(8, 2), 16) % 30;  // Luminosità
@@ -285,176 +286,629 @@ function generateSvgImageForDream(dream: string, description: string): string {
                    description.toLowerCase().includes('horror') || 
                    description.toLowerCase().includes('paura') ||
                    description.toLowerCase().includes('terrore') ||
-                   description.toLowerCase().includes('inquietante');
+                   description.toLowerCase().includes('inquietante') ||
+                   description.toLowerCase().includes('nero') ||
+                   description.toLowerCase().includes('ombra');
   
   const brightTheme = description.toLowerCase().includes('luminoso') || 
                      description.toLowerCase().includes('felice') || 
                      description.toLowerCase().includes('gioia') ||
                      description.toLowerCase().includes('luce') ||
-                     description.toLowerCase().includes('brillante');
+                     description.toLowerCase().includes('brillante') ||
+                     description.toLowerCase().includes('sole') ||
+                     description.toLowerCase().includes('sereno');
+                     
+  const waterTheme = description.toLowerCase().includes('acqua') || 
+                    description.toLowerCase().includes('mare') || 
+                    description.toLowerCase().includes('oceano') ||
+                    description.toLowerCase().includes('fiume') ||
+                    description.toLowerCase().includes('lago');
+                    
+  const fireTheme = description.toLowerCase().includes('fuoco') || 
+                   description.toLowerCase().includes('fiamma') || 
+                   description.toLowerCase().includes('caldo') ||
+                   description.toLowerCase().includes('bruciare');
+                   
+  const natureTheme = description.toLowerCase().includes('natura') || 
+                     description.toLowerCase().includes('foresta') || 
+                     description.toLowerCase().includes('albero') ||
+                     description.toLowerCase().includes('verde') ||
+                     description.toLowerCase().includes('pianta');
   
-  // Adattiamo i colori in base al tema
-  let colorScheme;
-  if (darkTheme) {
-    colorScheme = {
-      bg: `hsl(${hue1}, ${sat1}%, ${Math.max(5, light1 - 30)}%)`,
-      main: `hsl(${hue1}, ${sat1}%, ${Math.max(15, light1 - 15)}%)`,
-      accent: `hsl(${hue2}, ${sat2}%, ${Math.max(20, light2 - 10)}%)`,
-      highlight: `hsl(${(hue1 + 180) % 360}, ${Math.min(100, sat1 + 20)}%, ${Math.min(70, light1 + 30)}%)`,
-      textColor: 'rgba(255, 255, 255, 0.9)'
-    };
-  } else if (brightTheme) {
-    colorScheme = {
-      bg: `hsl(${hue1}, ${Math.max(20, sat1 - 30)}%, ${Math.min(95, light1 + 30)}%)`,
-      main: `hsl(${hue1}, ${sat1}%, ${Math.min(90, light1 + 15)}%)`,
-      accent: `hsl(${hue2}, ${sat2}%, ${Math.min(85, light2 + 10)}%)`,
-      highlight: `hsl(${hue2}, ${Math.min(100, sat2 + 30)}%, ${Math.max(40, light2)}%)`,
-      textColor: 'rgba(0, 0, 0, 0.8)'
-    };
-  } else {
-    // Tema neutro
-    colorScheme = {
-      bg: `hsl(${hue1}, ${sat1}%, ${light1}%)`,
-      main: `hsl(${hue1}, ${sat1 + 10}%, ${light1 - 10}%)`,
-      accent: `hsl(${hue2}, ${sat2}%, ${light2}%)`,
-      highlight: `hsl(${(hue1 + 60) % 360}, ${Math.min(100, sat1 + 20)}%, ${Math.min(90, light1 + 20)}%)`,
-      textColor: light1 > 50 ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.9)'
-    };
-  }
   
-  // Generiamo un set di elementi SVG più complessi
-
-  // Funzione per generare una curva path SVG più complessa
-  const generateComplexPath = (seed: string, complexity: number, closed = false) => {
-    const points = [];
-    const center = {
-      x: 200 + parseInt(seed.substr(0, 2), 16) % 60 - 30,
-      y: 200 + parseInt(seed.substr(2, 2), 16) % 60 - 30
-    };
-    const radius = 80 + parseInt(seed.substr(4, 2), 16) % 40;
-    
-    for (let i = 0; i < complexity; i++) {
-      const angle = (i / complexity) * Math.PI * 2;
-      const variance = parseInt(seed.substr(i * 2 % seed.length, 2), 16) % 40 - 20;
-      const r = radius + variance;
-      points.push({
-        x: center.x + Math.cos(angle) * r,
-        y: center.y + Math.sin(angle) * r
-      });
-    }
-    
-    let path = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 1; i < points.length; i++) {
-      const prevPoint = points[i - 1];
-      const currentPoint = points[i];
-      const nextPoint = points[(i + 1) % points.length];
-      
-      // Controlliamo i punti
-      const control1 = {
-        x: prevPoint.x + (currentPoint.x - prevPoint.x) / 2,
-        y: prevPoint.y + (currentPoint.y - prevPoint.y) / 2
-      };
-      const control2 = {
-        x: currentPoint.x + (nextPoint.x - currentPoint.x) / 2,
-        y: currentPoint.y + (nextPoint.y - currentPoint.y) / 2
+  // Define SVG element arrays and color schemes for each style
+  const elements: string[] = [];
+  const defs: string[] = [];
+  
+  // --------------------------------
+  // Definizione degli stili artistici
+  // --------------------------------
+  
+  const styleGenerator = {
+    // Stile surrealista
+    surrealista: () => {
+      // Palette surreale
+      const colorScheme = {
+        bg: darkTheme 
+          ? `hsl(${hue1}, ${sat1}%, ${Math.max(5, light1 - 25)}%)`
+          : `hsl(${hue1}, ${sat1}%, ${Math.min(90, light1 + 15)}%)`,
+        main: `hsl(${hue2}, ${sat2}%, ${light2}%)`,
+        accent1: `hsl(${(hue1 + 120) % 360}, ${Math.min(100, sat1 + 20)}%, ${Math.min(80, light1 + 10)}%)`,
+        accent2: `hsl(${(hue1 + 240) % 360}, ${Math.min(100, sat1 + 10)}%, ${Math.min(70, light1 + 5)}%)`,
+        highlight: `hsl(${hue2}, ${Math.min(100, sat2 + 30)}%, ${Math.max(45, light2 + 20)}%)`,
+        textColor: darkTheme ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)'
       };
       
-      path += ` S ${control2.x} ${control2.y}, ${nextPoint.x} ${nextPoint.y}`;
-    }
+      // Filtri surreali
+      defs.push(`
+        <filter id="displacementFilter">
+          <feTurbulence type="turbulence" baseFrequency="0.01" numOctaves="3" result="turbulence"/>
+          <feDisplacementMap in2="turbulence" in="SourceGraphic" scale="25" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+        <filter id="grainEffect">
+          <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+          <feColorMatrix type="matrix" values="0 0 0 0 0, 0 0 0 0 0, 0 0 0 0 0, 0 0 0 0.5 0"/>
+          <feComposite operator="in" in2="SourceGraphic"/>
+          <feComposite operator="arithmetic" k1="0" k2="1" k3="0" k4="0" in2="SourceGraphic"/> 
+        </filter>
+        <radialGradient id="surreal-gradient" cx="50%" cy="50%" r="100%" fx="50%" fy="50%">
+          <stop offset="0%" stop-color="${colorScheme.accent1}" stop-opacity="0.8"/>
+          <stop offset="50%" stop-color="${colorScheme.main}" stop-opacity="0.5"/>
+          <stop offset="100%" stop-color="${colorScheme.bg}" stop-opacity="1"/>
+        </radialGradient>
+      `);
+      
+      // Background
+      elements.push(`<rect width="100%" height="100%" fill="url(#surreal-gradient)" />`);
+      
+      // Floating objects (typical surreal elements)
+      const generateFloatingObjects = () => {
+        const objects = [];
+        
+        // Occhi fluttuanti (elemento surrealista classico)
+        for (let i = 0; i < 3; i++) {
+          const seed = hash.substr(i * 8, 8);
+          const x = parseInt(seed.substr(0, 2), 16) % 350 + 25;
+          const y = parseInt(seed.substr(2, 2), 16) % 350 + 25;
+          const size = 10 + parseInt(seed.substr(4, 2), 16) % 25;
+          
+          objects.push(`
+            <g transform="translate(${x}, ${y})" filter="url(#softGlow)">
+              <ellipse cx="0" cy="0" rx="${size}" ry="${size * 0.6}" fill="white" />
+              <circle cx="0" cy="0" r="${size * 0.4}" fill="${colorScheme.accent2}" />
+              <circle cx="0" cy="0" r="${size * 0.2}" fill="black" />
+              <circle cx="${size * 0.15}" cy="${-size * 0.15}" r="${size * 0.05}" fill="white" />
+            </g>
+          `);
+        }
+        
+        // Forme geometriche distorte
+        for (let i = 0; i < 2; i++) {
+          const seed = hash.substr(i * 6 + 20, 8);
+          const x = parseInt(seed.substr(0, 2), 16) % 300 + 50;
+          const y = parseInt(seed.substr(2, 2), 16) % 300 + 50;
+          const size = 30 + parseInt(seed.substr(4, 2), 16) % 60;
+          
+          objects.push(`
+            <polygon points="${x},${y} ${x + size},${y + size / 2} ${x},${y + size} ${x - size},${y + size / 2}" 
+                    fill="${colorScheme.accent1}" opacity="0.7" filter="url(#displacementFilter)" />
+          `);
+        }
+        
+        // Orologio sciolto (riferimento a Dalí)
+        const clockSeed = hash.substr(14, 10);
+        const clockX = parseInt(clockSeed.substr(0, 2), 16) % 300 + 50;
+        const clockY = parseInt(clockSeed.substr(2, 2), 16) % 200 + 100;
+        const clockRadius = 30 + parseInt(clockSeed.substr(4, 2), 16) % 20;
+        
+        objects.push(`
+          <g transform="translate(${clockX}, ${clockY}) rotate(15)" filter="url(#displacementFilter)">
+            <ellipse cx="0" cy="0" rx="${clockRadius}" ry="${clockRadius * 1.5}" fill="${colorScheme.highlight}" 
+                    stroke="black" stroke-width="2" opacity="0.9" />
+            <line x1="0" y1="-${clockRadius * 0.5}" x2="0" y2="${clockRadius * 0.2}" stroke="black" stroke-width="2" />
+            <line x1="-${clockRadius * 0.4}" y1="0" x2="${clockRadius * 0.2}" y2="0" stroke="black" stroke-width="2" />
+          </g>
+        `);
+        
+        return objects.join('\n');
+      };
+      
+      // Aggiungiamo elementi surrealisti
+      elements.push(generateFloatingObjects());
+      
+      // Aggiungiamo un motivo di sfondo surreale
+      elements.push(`
+        <g opacity="0.2" filter="url(#grainEffect)">
+          <rect width="100%" height="100%" fill="none" stroke="${colorScheme.accent2}" stroke-width="5" />
+          <circle cx="200" cy="200" r="150" fill="none" stroke="${colorScheme.accent1}" stroke-width="3" stroke-dasharray="10,10" />
+        </g>
+      `);
+      
+      // Horizon line with reflection (classic surrealist landscape element)
+      elements.push(`
+        <path d="M 0,300 C 100,280 300,320 400,300" stroke="${colorScheme.accent2}" stroke-width="2" fill="none" />
+        <path d="M 0,300 C 100,320 300,280 400,300 L 400,400 L 0,400 Z" fill="${colorScheme.accent2}" opacity="0.3" />
+      `);
+      
+      // Firma surrealista
+      elements.push(`
+        <text x="50%" y="95%" font-family="cursive" font-size="14" fill="${colorScheme.textColor}" 
+              text-anchor="middle" font-style="italic" filter="url(#softGlow)">
+          Sogno Surrealista
+        </text>
+      `);
+    },
     
-    if (closed) {
-      path += ' Z';
-    }
+    // Stile impressionista
+    impressionista: () => {
+      // Palette impressionista - colori vivaci e luminosi
+      const colorScheme = {
+        bg: `hsl(${hue1}, ${Math.max(60, sat1)}%, ${Math.min(90, light1 + 20)}%)`,
+        main: `hsl(${hue2}, ${Math.min(100, sat2 + 10)}%, ${Math.min(80, light2 + 15)}%)`,
+        accent1: `hsl(${(hue1 + 30) % 360}, ${Math.min(90, sat1 + 20)}%, ${Math.min(85, light1 + 10)}%)`,
+        accent2: `hsl(${(hue1 + 60) % 360}, ${Math.min(100, sat1 + 15)}%, ${Math.min(80, light1 + 5)}%)`,
+        shadow: `hsl(${(hue1 + 240) % 360}, ${Math.min(70, sat1)}%, ${Math.max(30, light1 - 20)}%)`,
+        highlight: `hsl(${hue1}, ${Math.min(60, sat1)}%, ${Math.min(95, light1 + 25)}%)`,
+        textColor: 'rgba(60, 40, 20, 0.9)'
+      };
+      
+      // Filtri impressionisti per effetto pennellata
+      defs.push(`
+        <filter id="brushStrokes" x="-50%" y="-50%" width="200%" height="200%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="5" seed="${parseInt(hash.substr(0, 8), 16)}" />
+          <feDisplacementMap in="SourceGraphic" scale="20" />
+        </filter>
+        <filter id="softLight">
+          <feGaussianBlur stdDeviation="5" />
+          <feColorMatrix type="matrix" values="1 0 0 0 0, 0 1 0 0 0, 0 0 1 0 0, 0 0 0 0.7 0"/>
+        </filter>
+        <pattern id="brushTexture" patternUnits="userSpaceOnUse" width="100" height="100">
+          <rect width="100" height="100" fill="${colorScheme.highlight}" opacity="0.1" />
+          <g fill="none" stroke="${colorScheme.shadow}" stroke-width="0.5" opacity="0.1">
+            ${Array.from({length: 20}, (_, i) => {
+              const x1 = Math.floor(Math.random() * 100);
+              const y1 = Math.floor(Math.random() * 100);
+              const x2 = Math.floor(Math.random() * 100);
+              const y2 = Math.floor(Math.random() * 100);
+              return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+            }).join('\n')}
+          </g>
+        </pattern>
+      `);
+      
+      // Sfondo con texture
+      elements.push(`
+        <rect width="400" height="400" fill="${colorScheme.bg}" />
+        <rect width="400" height="400" fill="url(#brushTexture)" />
+      `);
+      
+      // Funzione per generare pennellate impressioniste
+      const generateBrushStrokes = () => {
+        const strokes = [];
+        
+        // Primo livello - pennellate di sfondo grandi e ampie
+        for (let i = 0; i < 15; i++) {
+          const seed = hash.substr(i * 3, 6);
+          const x = parseInt(seed.substr(0, 2), 16) % 400;
+          const y = parseInt(seed.substr(2, 2), 16) % 400;
+          const width = 40 + parseInt(seed.substr(4, 2), 16) % 60;
+          const height = 5 + parseInt(seed.substr(5, 1), 16) % 20;
+          const rotation = parseInt(seed.substr(1, 2), 16) % 180;
+          
+          // Colore determinato dalla posizione
+          let color;
+          if (y < 150) {
+            // Cielo - tonalità blu/viola
+            color = i % 2 === 0 ? colorScheme.bg : colorScheme.accent1;
+          } else if (y < 300) {
+            // Terreno centrale - verde/giallo/arancio
+            color = i % 2 === 0 ? colorScheme.main : colorScheme.accent2;
+          } else {
+            // Primo piano - più denso/scuro
+            color = i % 2 === 0 ? colorScheme.accent2 : colorScheme.shadow;
+          }
+          
+          strokes.push(`
+            <ellipse cx="${x}" cy="${y}" rx="${width}" ry="${height}" 
+                    transform="rotate(${rotation}, ${x}, ${y})"
+                    fill="${color}" opacity="${0.3 + (i % 4) * 0.1}" filter="url(#brushStrokes)" />
+          `);
+        }
+        
+        // Secondo livello - pennellate di dettaglio
+        for (let i = 0; i < 40; i++) {
+          const seed = hash.substr(i * 2 + 10, 6);
+          const x = parseInt(seed.substr(0, 2), 16) % 400;
+          const y = parseInt(seed.substr(2, 2), 16) % 400;
+          const width = 5 + parseInt(seed.substr(4, 2), 16) % 30;
+          const height = 2 + parseInt(seed.substr(5, 1), 16) % 10;
+          const rotation = parseInt(seed.substr(1, 2), 16) % 180;
+          
+          // Mix dinamico di colori
+          const colorIndex = i % 5;
+          let color;
+          switch (colorIndex) {
+            case 0: color = colorScheme.bg; break;
+            case 1: color = colorScheme.main; break;
+            case 2: color = colorScheme.accent1; break;
+            case 3: color = colorScheme.accent2; break;
+            case 4: color = colorScheme.highlight; break;
+          }
+          
+          strokes.push(`
+            <ellipse cx="${x}" cy="${y}" rx="${width}" ry="${height}" 
+                    transform="rotate(${rotation}, ${x}, ${y})"
+                    fill="${color}" opacity="${0.4 + (i % 5) * 0.1}" filter="url(#brushStrokes)" />
+          `);
+        }
+        
+        return strokes.join('\n');
+      };
+      
+      // Aggiungiamo pennellate impressioniste
+      elements.push(generateBrushStrokes());
+      
+      // Aggiungiamo highlights impressionisti (punti di luce)
+      for (let i = 0; i < 10; i++) {
+        const seed = hash.substr(i * 3 + 20, 6);
+        const x = parseInt(seed.substr(0, 2), 16) % 400;
+        const y = parseInt(seed.substr(2, 2), 16) % 400;
+        const radius = 2 + parseInt(seed.substr(4, 2), 16) % 6;
+        
+        elements.push(`
+          <circle cx="${x}" cy="${y}" r="${radius}" fill="${colorScheme.highlight}" 
+                  opacity="0.8" filter="url(#softLight)" />
+        `);
+      }
+      
+      // Firma impressionista
+      elements.push(`
+        <text x="50%" y="95%" font-family="serif" font-size="16" fill="${colorScheme.textColor}" 
+              text-anchor="middle" font-weight="normal" filter="url(#softLight)">
+          Impression
+        </text>
+      `);
+    },
     
-    return path;
+    // Stile fantasy
+    fantasy: () => {
+      // Palette fantasy - colori intensi e vibranti
+      const colorScheme = {
+        bg: darkTheme 
+          ? `hsl(${(hue1 + 210) % 360}, ${Math.min(80, sat1 + 10)}%, ${Math.max(10, light1 - 20)}%)`
+          : `hsl(${(hue1 + 200) % 360}, ${Math.min(80, sat1 + 20)}%, ${Math.min(40, light1 + 10)}%)`,
+        main: `hsl(${hue1}, ${Math.min(100, sat1 + 20)}%, ${Math.min(60, light1 + 5)}%)`,
+        accent1: `hsl(${(hue1 + 60) % 360}, ${Math.min(100, sat1 + 30)}%, ${Math.min(70, light1 + 15)}%)`,
+        accent2: `hsl(${(hue1 + 30) % 360}, ${Math.min(100, sat1 + 25)}%, ${Math.min(65, light1 + 10)}%)`,
+        magic: `hsl(${(hue1 + 290) % 360}, ${Math.min(100, sat1 + 40)}%, ${Math.min(75, light1 + 25)}%)`,
+        highlight: `hsl(${(hue1 + 180) % 360}, ${Math.min(100, sat1 + 30)}%, ${Math.min(85, light1 + 30)}%)`,
+        textColor: 'rgba(255, 255, 255, 0.9)'
+      };
+      
+      // Filtri fantasy
+      defs.push(`
+        <filter id="magicGlow" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="blur" />
+          <feColorMatrix in="blur" mode="matrix" values="
+            1 0 0 0 0
+            0 1 0 0 0
+            0 0 1 0 0
+            0 0 0 30 -10
+          " result="magicGlow" />
+          <feComposite in="SourceGraphic" in2="magicGlow" operator="over" />
+        </filter>
+        <filter id="starlight">
+          <feGaussianBlur stdDeviation="2.5" />
+          <feColorMatrix type="matrix" values="
+            1 0 0 0 1
+            0 1 0 0 1
+            0 0 1 0 1
+            0 0 0 15 -6
+          "/>
+        </filter>
+        <radialGradient id="fantasy-sky" cx="50%" cy="30%" r="80%" fx="50%" fy="30%">
+          <stop offset="0%" stop-color="${colorScheme.highlight}" stop-opacity="0.7"/>
+          <stop offset="40%" stop-color="${colorScheme.bg}" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="${colorScheme.bg}" stop-opacity="1"/>
+        </radialGradient>
+        <linearGradient id="fantasy-ground" x1="0%" y1="60%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${colorScheme.main}" />
+          <stop offset="100%" stop-color="${colorScheme.accent2}" />
+        </linearGradient>
+      `);
+      
+      // Cielo fantasy con luna/sole
+      elements.push(`
+        <rect width="400" height="400" fill="url(#fantasy-sky)" />
+        <circle cx="300" cy="100" r="40" fill="${colorScheme.highlight}" opacity="0.9" filter="url(#magicGlow)" />
+      `);
+      
+      // Aggiungiamo stelle
+      for (let i = 0; i < 25; i++) {
+        const seed = hash.substr(i * 2, 4);
+        const x = parseInt(seed.substr(0, 2), 16) % 400;
+        const y = parseInt(seed.substr(2, 2), 16) % 200;
+        const size = 1 + (parseInt(seed.substr(3, 1), 16) % 3);
+        
+        elements.push(`
+          <circle cx="${x}" cy="${y}" r="${size}" fill="white" opacity="${0.5 + (size / 4)}" filter="url(#starlight)" />
+        `);
+      }
+      
+      // Paesaggio fantasy (montagne, foresta)
+      elements.push(`
+        <path d="M0,400 L0,300 Q50,200 100,250 Q150,300 200,200 Q250,100 300,180 Q350,260 400,220 L400,400 Z" 
+                fill="url(#fantasy-ground)" />
+      `);
+      
+      // Torre fantasy o castello
+      const castleX = 100 + parseInt(hash.substr(0, 2), 16) % 200;
+      elements.push(`
+        <g transform="translate(${castleX}, 280) scale(0.6)">
+          <rect x="-25" y="-120" width="50" height="120" fill="${colorScheme.accent1}" />
+          <polygon points="-35,-120 35,-120 0,-160" fill="${colorScheme.accent1}" />
+          <rect x="-35" y="-45" width="70" height="45" fill="${colorScheme.accent1}" />
+          <rect x="-10" y="-10" width="20" height="10" fill="black" />
+          <circle cx="0" cy="-80" r="10" fill="${colorScheme.magic}" filter="url(#magicGlow)" />
+        </g>
+      `);
+      
+      // Elementi magici (aura, particelle)
+      for (let i = 0; i < 15; i++) {
+        const seed = hash.substr(i * 3 + 15, 6);
+        const x = parseInt(seed.substr(0, 2), 16) % 400;
+        const y = 150 + parseInt(seed.substr(2, 2), 16) % 250;
+        const size = 2 + parseInt(seed.substr(4, 2), 16) % 8;
+        
+        elements.push(`
+          <circle cx="${x}" cy="${y}" r="${size}" fill="${colorScheme.magic}" 
+                  opacity="${0.6 + (size / 20)}" filter="url(#magicGlow)" />
+        `);
+      }
+      
+      // Creatura fantasy volante
+      const creatureX = 250 + parseInt(hash.substr(10, 2), 16) % 100;
+      const creatureY = 100 + parseInt(hash.substr(12, 2), 16) % 50;
+      elements.push(`
+        <g transform="translate(${creatureX}, ${creatureY}) scale(0.3)" filter="url(#magicGlow)">
+          <ellipse cx="0" cy="0" rx="20" ry="10" fill="${colorScheme.accent2}" />
+          <path d="M-5,-5 Q0,-20 5,-5 Z" fill="${colorScheme.accent2}" />
+          <path d="M-20,0 Q-40,-20 -30,10 Z" fill="${colorScheme.accent2}" />
+          <path d="M20,0 Q40,-20 30,10 Z" fill="${colorScheme.accent2}" />
+        </g>
+      `);
+      
+      // Title
+      elements.push(`
+        <text x="50%" y="95%" font-family="fantasy" font-size="18" fill="${colorScheme.textColor}" 
+              text-anchor="middle" filter="url(#starlight)">
+          Regno Onirico
+        </text>
+      `);
+    },
+    
+    // Stile noir
+    noir: () => {
+      // Palette noir - alto contrasto, principalmente bianco e nero
+      const colorScheme = {
+        bg: 'rgb(10, 10, 12)',
+        main: 'rgb(30, 30, 35)',
+        shadow: 'rgb(5, 5, 7)',
+        highlight: 'rgb(200, 200, 220)',
+        accent: `hsla(${hue1}, 20%, 50%, 0.4)`, // Una leggera tinta di colore
+        textColor: 'rgba(220, 220, 220, 0.9)'
+      };
+      
+      // Filtri noir
+      defs.push(`
+        <filter id="noirGrain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/>
+          <feColorMatrix type="matrix" values="0 0 0 0 0, 0 0 0 0 0, 0 0 0 0 0, 0 0 0 0.07 0"/>
+          <feComposite operator="in" in2="SourceGraphic"/>
+          <feComposite operator="arithmetic" k1="0" k2="1" k3="0" k4="0" in2="SourceGraphic"/> 
+        </filter>
+        <filter id="sharpShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feOffset dx="5" dy="5" />
+          <feGaussianBlur stdDeviation="2" />
+          <feColorMatrix type="matrix" values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.9 0" />
+          <feBlend mode="normal" in2="SourceGraphic" />
+        </filter>
+        <linearGradient id="noirFade" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${colorScheme.bg}" />
+          <stop offset="40%" stop-color="${colorScheme.main}" />
+          <stop offset="100%" stop-color="${colorScheme.shadow}" />
+        </linearGradient>
+        <radialGradient id="spotlight" cx="30%" cy="30%" r="60%" fx="30%" fy="30%">
+          <stop offset="0%" stop-color="${colorScheme.highlight}" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="${colorScheme.bg}" stop-opacity="0"/>
+        </radialGradient>
+      `);
+      
+      // Sfondo noir
+      elements.push(`
+        <rect width="400" height="400" fill="url(#noirFade)" />
+        <rect width="400" height="400" fill="url(#spotlight)" />
+        <rect width="400" height="400" fill="transparent" filter="url(#noirGrain)" />
+      `);
+      
+      // Elementi urbani (edifici, strade)
+      elements.push(`
+        <g opacity="0.85">
+          <rect x="50" y="150" width="100" height="250" fill="${colorScheme.main}" filter="url(#sharpShadow)" />
+          <rect x="250" y="100" width="120" height="300" fill="${colorScheme.main}" filter="url(#sharpShadow)" />
+          <rect x="170" y="180" width="60" height="220" fill="${colorScheme.main}" filter="url(#sharpShadow)" />
+          
+          <!-- Finestre -->
+          ${Array.from({length: 20}, (_, i) => {
+            const bldg = i % 3;
+            let x, y, width, height;
+            
+            if (bldg === 0) {
+              // Primo edificio
+              x = 60 + (i % 4) * 20;
+              y = 170 + Math.floor(i / 4) * 40;
+              width = 10;
+              height = 20;
+            } else if (bldg === 1) {
+              // Edificio centrale
+              x = 180 + (i % 2) * 30;
+              y = 200 + Math.floor((i % 6) / 2) * 35;
+              width = 15;
+              height = 25;
+            } else {
+              // Edificio a destra
+              x = 260 + (i % 5) * 20;
+              y = 120 + Math.floor(i / 5) * 40;
+              width = 12;
+              height = 18;
+            }
+            
+            // Luce accesa o spenta
+            const lit = hash.charAt(i).charCodeAt(0) % 5 === 0;
+            const fill = lit ? 'rgba(255, 240, 180, 0.7)' : 'rgba(30, 30, 35, 0.8)';
+            
+            return `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${fill}" />`;
+          }).join('\n')}
+        </g>
+      `);
+      
+      // Luci della strada
+      elements.push(`
+        <circle cx="80" cy="140" r="40" fill="${colorScheme.highlight}" opacity="0.05" />
+        <circle cx="80" cy="140" r="5" fill="${colorScheme.highlight}" opacity="0.8" />
+        <rect x="78" y="140" width="4" height="40" fill="${colorScheme.main}" />
+      `);
+      
+      // Silhouette di persona
+      elements.push(`
+        <g transform="translate(120, 340) scale(0.8)">
+          <path d="M0,0 L0,-30 L5,-35 L-5,-35 L0,-30 L-10,-20 L10,-20 Z" fill="black" />
+          <line x1="0" y1="-30" x2="0" y2="-60" stroke="black" stroke-width="2" />
+          <circle cx="0" cy="-70" r="10" fill="black" />
+        </g>
+      `);
+      
+      // Elementi noir (sigaretta, ombra lunga)
+      const shadowLength = 150 + parseInt(hash.substr(0, 2), 16) % 100;
+      elements.push(`
+        <g transform="translate(350, 350)">
+          <path d="M0,0 L-${shadowLength},-${shadowLength / 3}" stroke="${colorScheme.shadow}" stroke-width="20" stroke-opacity="0.15" />
+        </g>
+      `);
+      
+      // Effect rain (pioggia tipica del noir)
+      for (let i = 0; i < 30; i++) {
+        const seed = hash.substr(i * 2, 4);
+        const x = parseInt(seed.substr(0, 2), 16) % 400;
+        const y = parseInt(seed.substr(2, 2), 16) % 400;
+        const length = 10 + parseInt(seed.substr(3, 1), 16) % 15;
+        
+        elements.push(`
+          <line x1="${x}" y1="${y}" x2="${x - 2}" y2="${y + length}" 
+                stroke="${colorScheme.highlight}" stroke-width="1" opacity="0.3" />
+        `);
+      }
+      
+      // Title
+      elements.push(`
+        <text x="50%" y="95%" font-family="monospace" font-size="16" fill="${colorScheme.textColor}" 
+              text-anchor="middle" letter-spacing="3">
+          NOIR
+        </text>
+      `);
+    },
+    
+    // Stile minimalista
+    minimalista: () => {
+      // Palette minimalista - colori limitati e semplici
+      const colorScheme = {
+        bg: `hsl(${hue1}, 10%, 95%)`, // Sfondo quasi bianco
+        main: `hsl(${hue1}, 50%, 50%)`, // Il colore principale (usato con moderazione)
+        accent: `hsl(${(hue1 + 180) % 360}, 40%, 60%)`, // Accento (usato ancora meno)
+        dark: `hsl(${hue1}, 10%, 15%)`, // Quasi nero
+        light: `hsl(${hue1}, 5%, 98%)`, // Quasi bianco
+        textColor: `hsl(${hue1}, 10%, 15%)`
+      };
+      
+      // Per uno stile veramente minimalista, non utilizziamo molti filtri
+      defs.push(`
+        <filter id="minimalBlur" x="-10%" y="-10%" width="120%" height="120%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1" />
+        </filter>
+      `);
+      
+      // Sfondo minimalista
+      elements.push(`<rect width="400" height="400" fill="${colorScheme.bg}" />`);
+      
+      // Uno o due elementi geometrici semplici che dominano la composizione
+      const useCircle = parseInt(hash.substr(0, 2), 16) % 2 === 0;
+      
+      if (useCircle) {
+        // Composizione con cerchio
+        const cx = 200 + parseInt(hash.substr(2, 2), 16) % 40 - 20;
+        const cy = 200 + parseInt(hash.substr(4, 2), 16) % 40 - 20;
+        const r = 80 + parseInt(hash.substr(6, 2), 16) % 40;
+        
+        elements.push(`
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="${colorScheme.main}" opacity="0.8" />
+          <circle cx="${cx + r/2}" cy="${cy - r/2}" r="${r/3}" fill="${colorScheme.accent}" opacity="0.6" />
+        `);
+      } else {
+        // Composizione con rettangolo
+        const x = 100 + parseInt(hash.substr(2, 2), 16) % 40 - 20;
+        const y = 100 + parseInt(hash.substr(4, 2), 16) % 40 - 20;
+        const width = 200 + parseInt(hash.substr(6, 2), 16) % 40 - 20;
+        const height = 200 + parseInt(hash.substr(8, 2), 16) % 40 - 20;
+        
+        elements.push(`
+          <rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${colorScheme.main}" opacity="0.8" />
+          <rect x="${x + width/2}" y="${y - height/4}" width="${width/4}" height="${height/4}" fill="${colorScheme.accent}" opacity="0.6" />
+        `);
+      }
+      
+      // Una singola linea che attraversa la composizione
+      const lineVertical = parseInt(hash.substr(10, 2), 16) % 2 === 0;
+      
+      if (lineVertical) {
+        const x = 150 + parseInt(hash.substr(12, 2), 16) % 100;
+        elements.push(`
+          <line x1="${x}" y1="0" x2="${x}" y2="400" stroke="${colorScheme.dark}" stroke-width="1" opacity="0.5" />
+        `);
+      } else {
+        const y = 150 + parseInt(hash.substr(12, 2), 16) % 100;
+        elements.push(`
+          <line x1="0" y1="${y}" x2="400" y2="${y}" stroke="${colorScheme.dark}" stroke-width="1" opacity="0.5" />
+        `);
+      }
+      
+      // Un tocco personale al design - nome essenziale
+      elements.push(`
+        <text x="50%" y="95%" font-family="sans-serif" font-size="12" fill="${colorScheme.textColor}" 
+              text-anchor="middle" letter-spacing="5">
+          minimo
+        </text>
+      `);
+    }
   };
   
-  // Generiamo elementi in base alla descrizione
-  const elements = [];
-  
-  // Sfondo con gradiente
-  elements.push(`
-    <defs>
-      <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="${colorScheme.bg}" />
-        <stop offset="100%" stop-color="${colorScheme.main}" />
-      </linearGradient>
-      <filter id="blur1" x="-50%" y="-50%" width="200%" height="200%">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="15" />
-      </filter>
-      <filter id="blur2" x="-50%" y="-50%" width="200%" height="200%">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="5" />
-      </filter>
-      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
-        <feComposite in="SourceGraphic" in2="blur" operator="over" />
-      </filter>
-    </defs>
-    <rect width="100%" height="100%" fill="url(#bgGradient)" />
-  `);
-  
-  // Aggiungiamo forme organiche per lo sfondo
-  for (let i = 0; i < 3; i++) {
-    const seed = hash.substr(i * 6, 6);
-    const path = generateComplexPath(seed, 8, true);
-    const opacity = 0.2 + (parseInt(seed.substr(0, 2), 16) % 40) / 100;
-    elements.push(`
-      <path d="${path}" fill="${colorScheme.accent}" opacity="${opacity}" filter="url(#blur1)" />
-    `);
+  // Determine which style to use
+  if (!artStyles.find(style => style.name === artStyle)) {
+    artStyle = "surrealista"; // Default to surrealist if style not found
   }
   
-  // Aggiungiamo forme principali
-  for (let i = 0; i < 2; i++) {
-    const seed = hash.substr(i * 8 + 2, 8);
-    const path = generateComplexPath(seed, 10, true);
-    const opacity = 0.5 + (parseInt(seed.substr(0, 2), 16) % 40) / 100;
-    elements.push(`
-      <path d="${path}" fill="${colorScheme.highlight}" opacity="${opacity}" filter="url(#blur2)" />
-    `);
-  }
+  // Generate the style
+  styleGenerator[artStyle]();
   
-  // Aggiungiamo elementi di dettaglio
-  for (let i = 0; i < 4; i++) {
-    const seed = hash.substr(i * 4 + 10, 8);
-    const x = parseInt(seed.substr(0, 2), 16) % 350 + 25;
-    const y = parseInt(seed.substr(2, 2), 16) % 350 + 25;
-    const radius = 5 + parseInt(seed.substr(4, 2), 16) % 15;
-    
-    elements.push(`
-      <circle cx="${x}" cy="${y}" r="${radius}" fill="${colorScheme.highlight}" opacity="0.8" filter="url(#glow)" />
-    `);
-  }
-  
-  // Aggiungiamo linee decorative
-  for (let i = 0; i < 5; i++) {
-    const seed = hash.substr(i * 6 + 3, 6);
-    const x1 = parseInt(seed.substr(0, 2), 16) % 400;
-    const y1 = parseInt(seed.substr(2, 2), 16) % 400;
-    const x2 = (x1 + parseInt(seed.substr(4, 2), 16) % 100) % 400;
-    const y2 = (y1 + parseInt(seed.substr(5, 2), 16) % 100) % 400;
-    
-    elements.push(`
-      <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colorScheme.highlight}" 
-            stroke-width="1" opacity="0.6" stroke-linecap="round" />
-    `);
-  }
-  
-  // Elemento centrale simbolico
-  const centerPath = generateComplexPath(hash.substr(20, 10), 12, true);
-  elements.push(`
-    <path d="${centerPath}" fill="${colorScheme.highlight}" opacity="0.7" filter="url(#glow)" />
-  `);
-  
-  // Aggiungiamo un titolo
-  elements.push(`
-    <text x="50%" y="95%" font-family="Arial" font-size="14" fill="${colorScheme.textColor}" 
-          text-anchor="middle" font-weight="bold" filter="url(#glow)">
-      Visione Onirica
-    </text>
-  `);
-  
+  // Compose the final SVG
   return `
     <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        ${defs.join('\n')}
+      </defs>
       ${elements.join('\n')}
     </svg>
   `;
