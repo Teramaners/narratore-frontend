@@ -436,7 +436,7 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
     }
   };
   
-  // Funzione per generare un ebook EPUB con la collezione di sogni
+  // Funzione per generare un ebook HTML con la collezione di sogni
   const exportDreamCollectionToEpub = async () => {
     // Filtra i sogni in base alle selezioni
     let dreamsToExport: Dream[] = [];
@@ -480,44 +480,33 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
         autore: authorName,
       };
       
-      // Apri una nuova finestra con il documento HTML
-      const newWindow = window.open('', '_blank');
+      // Effettua la richiesta e ottieni il blob HTML
+      const response = await fetch('/api/genera-ebook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
       
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore nella generazione dell\'ebook');
+      }
+      
+      // Ottieni il contenuto HTML come stringa
+      const htmlContent = await response.text();
+      
+      // Crea un nuovo documento in una nuova finestra
+      const newWindow = window.open('', '_blank');
       if (!newWindow) {
         throw new Error('Il browser ha bloccato l\'apertura della nuova finestra. Controlla le impostazioni del browser.');
       }
       
-      // Crea un form temporaneo per inviare i dati
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = '/api/genera-ebook';
-      form.target = newWindow.name;
-      
-      // Aggiungi i dati come input nascosto
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'sogni';
-      input.value = JSON.stringify(requestData.sogni);
-      form.appendChild(input);
-      
-      const inputTitolo = document.createElement('input');
-      inputTitolo.type = 'hidden';
-      inputTitolo.name = 'titolo';
-      inputTitolo.value = requestData.titolo;
-      form.appendChild(inputTitolo);
-      
-      const inputAutore = document.createElement('input');
-      inputAutore.type = 'hidden';
-      inputAutore.name = 'autore';
-      inputAutore.value = requestData.autore || '';
-      form.appendChild(inputAutore);
-      
-      // Aggiungi il form al documento e invialo
-      document.body.appendChild(form);
-      form.submit();
-      
-      // Rimuovi il form
-      document.body.removeChild(form);
+      // Scrivi l'HTML nella nuova finestra
+      newWindow.document.open();
+      newWindow.document.write(htmlContent);
+      newWindow.document.close();
       
       toast({
         description: `Ebook HTML con ${dreamsToExport.length} sogni generato con successo!`,
@@ -554,44 +543,33 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
         autore: authorName || "Narratore di Sogni",
       };
       
-      // Apri una nuova finestra con il documento HTML
-      const newWindow = window.open('', '_blank');
+      // Effettua la richiesta e ottieni il blob HTML
+      const response = await fetch('/api/genera-ebook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
       
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore nella generazione dell\'ebook');
+      }
+      
+      // Ottieni il contenuto HTML come stringa
+      const htmlContent = await response.text();
+      
+      // Crea un nuovo documento in una nuova finestra
+      const newWindow = window.open('', '_blank');
       if (!newWindow) {
         throw new Error('Il browser ha bloccato l\'apertura della nuova finestra. Controlla le impostazioni del browser.');
       }
       
-      // Crea un form temporaneo per inviare i dati
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = '/api/genera-ebook';
-      form.target = newWindow.name;
-      
-      // Aggiungi i dati come input nascosto
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'sogni';
-      input.value = JSON.stringify(requestData.sogni);
-      form.appendChild(input);
-      
-      const inputTitolo = document.createElement('input');
-      inputTitolo.type = 'hidden';
-      inputTitolo.name = 'titolo';
-      inputTitolo.value = requestData.titolo;
-      form.appendChild(inputTitolo);
-      
-      const inputAutore = document.createElement('input');
-      inputAutore.type = 'hidden';
-      inputAutore.name = 'autore';
-      inputAutore.value = requestData.autore || '';
-      form.appendChild(inputAutore);
-      
-      // Aggiungi il form al documento e invialo
-      document.body.appendChild(form);
-      form.submit();
-      
-      // Rimuovi il form
-      document.body.removeChild(form);
+      // Scrivi l'HTML nella nuova finestra
+      newWindow.document.open();
+      newWindow.document.write(htmlContent);
+      newWindow.document.close();
       
       toast({
         description: "Ebook HTML del sogno generato con successo!",
@@ -657,7 +635,7 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
           <TabsContent value="single" className="space-y-4">
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                Esporta il sogno corrente come documento PDF o ebook EPUB facilmente condivisibile.
+                Esporta il sogno corrente come documento PDF o ebook HTML facilmente condivisibile.
               </div>
               
               <div className="space-y-2">
@@ -677,7 +655,7 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
                     onClick={() => setExportFormat('epub')}
                   >
                     <Book className="h-4 w-4 mr-2" />
-                    EPUB
+                    HTML
                   </Button>
                 </div>
                 
@@ -719,7 +697,7 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
                 ) : (
                   <>
                     <Download className="mr-2 h-4 w-4" />
-                    Esporta sogno corrente in {exportFormat === 'pdf' ? 'PDF' : 'EPUB'}
+                    Esporta sogno corrente in {exportFormat === 'pdf' ? 'PDF' : 'HTML'}
                   </>
                 )}
               </Button>
@@ -730,7 +708,7 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
           <TabsContent value="collection" className="space-y-4">
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                Crea un eBook PDF o EPUB con una collezione dei tuoi sogni preferiti o selezionati.
+                Crea un eBook PDF o HTML con una collezione dei tuoi sogni preferiti o selezionati.
               </div>
               
               <div className="space-y-2">
@@ -814,7 +792,7 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
                     onClick={() => setExportFormat('epub')}
                   >
                     <Book className="h-4 w-4 mr-2" />
-                    EPUB
+                    HTML
                   </Button>
                 </div>
               </div>
