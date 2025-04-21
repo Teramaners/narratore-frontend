@@ -105,30 +105,71 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
     }
   };
   
-  // Carica le voci disponibili all'avvio
+  // Verifica la compatibilità del browser con la sintesi vocale e le voci disponibili all'avvio
   useEffect(() => {
+    // Verifica se la sintesi vocale è supportata nel browser
+    if (!window.speechSynthesis) {
+      toast({
+        variant: "destructive",
+        description: "La sintesi vocale non è supportata in questo browser. Prova con Chrome, Edge o Safari.",
+      });
+      return;
+    }
+
     const loadVoices = () => {
-      const availableVoices = synth.getVoices();
-      
-      // Filtra solo le voci italiane o inglesi
-      const filteredVoices = availableVoices
-        .filter(voice => voice.lang.includes('it') || voice.lang.includes('en'))
-        .map(voice => ({
-          id: voice.voiceURI,
-          name: voice.name,
-          lang: voice.lang,
-          gender: (voice.name.toLowerCase().includes('female') || 
-                  voice.name.toLowerCase().includes('donna')) ? 'female' as const : 'male' as const
-        }));
-      
-      setVoices(filteredVoices);
-      
-      // Seleziona automaticamente una voce italiana se disponibile
-      const italianVoice = filteredVoices.find(voice => voice.lang.includes('it'));
-      if (italianVoice) {
-        setSelectedVoice(italianVoice.id);
-      } else if (filteredVoices.length > 0) {
-        setSelectedVoice(filteredVoices[0].id);
+      try {
+        const availableVoices = synth.getVoices();
+        
+        if (!availableVoices || availableVoices.length === 0) {
+          console.warn("Nessuna voce disponibile per la sintesi vocale");
+          setTimeout(loadVoices, 200); // Riprova tra 200ms se non ci sono voci
+          return;
+        }
+        
+        // Filtra solo le voci italiane o inglesi
+        const filteredVoices = availableVoices
+          .filter(voice => voice.lang.includes('it') || voice.lang.includes('en'))
+          .map(voice => ({
+            id: voice.voiceURI,
+            name: voice.name,
+            lang: voice.lang,
+            gender: (voice.name.toLowerCase().includes('female') || 
+                    voice.name.toLowerCase().includes('donna')) ? 'female' as const : 'male' as const
+          }));
+        
+        if (filteredVoices.length === 0) {
+          // Se non ci sono voci in italiano o inglese, usa tutte le voci disponibili
+          const allVoices = availableVoices.map(voice => ({
+            id: voice.voiceURI,
+            name: voice.name,
+            lang: voice.lang,
+            gender: (voice.name.toLowerCase().includes('female') || 
+                    voice.name.toLowerCase().includes('donna')) ? 'female' as const : 'male' as const
+          }));
+          
+          console.log("Nessuna voce italiana o inglese trovata, uso tutte le voci disponibili:", availableVoices);
+          setVoices(allVoices);
+          
+          if (allVoices.length > 0) {
+            setSelectedVoice(allVoices[0].id);
+          }
+        } else {
+          setVoices(filteredVoices);
+          
+          // Seleziona automaticamente una voce italiana se disponibile
+          const italianVoice = filteredVoices.find(voice => voice.lang.includes('it'));
+          if (italianVoice) {
+            setSelectedVoice(italianVoice.id);
+          } else if (filteredVoices.length > 0) {
+            setSelectedVoice(filteredVoices[0].id);
+          }
+        }
+      } catch (error) {
+        console.error("Errore nel caricamento delle voci:", error);
+        toast({
+          variant: "destructive",
+          description: "Errore nel caricamento delle voci. Ricarica la pagina o prova con un altro browser.",
+        });
       }
     };
     
@@ -137,6 +178,7 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
       synth.onvoiceschanged = loadVoices;
     }
     
+    // Chrome su alcune piattaforme potrebbe non attivare onvoiceschanged, quindi proviamo a caricare le voci direttamente
     loadVoices();
     
     // Imposta il tipo di ambiente basato sull'emozione
@@ -186,98 +228,151 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
     }
     
     try {
+      // Controlla se la sintesi vocale è supportata
+      if (!window.speechSynthesis) {
+        throw new Error("La sintesi vocale non è supportata in questo browser");
+      }
+      
+      // Controlla se la sintesi vocale è disponibile e funzionante
+      const availableVoices = synth.getVoices();
+      if (!availableVoices || availableVoices.length === 0) {
+        throw new Error("Nessuna voce disponibile per la sintesi vocale");
+      }
+      
       // Ferma eventuali riproduzioni in corso
       stopPlayback();
       
-      // Inizializza un nuovo utterance
-      const utterance = new SpeechSynthesisUtterance(dreamStory);
-      utteranceRef.current = utterance;
-      
-      // Imposta i parametri della voce
-      const selectedVoiceObj = synth.getVoices().find(voice => voice.voiceURI === selectedVoice);
-      if (selectedVoiceObj) {
-        utterance.voice = selectedVoiceObj;
+      // Otteniamo la selezione della voce corrente
+      let selectedVoiceObj = availableVoices.find(voice => voice.voiceURI === selectedVoice);
+      if (!selectedVoiceObj) {
+        console.warn("Voce selezionata non trovata, uso la voce predefinita");
+        if (availableVoices.length > 0) {
+          selectedVoiceObj = availableVoices[0];
+        }
       }
       
-      utterance.rate = rate;
-      utterance.pitch = pitch;
-      utterance.volume = volume;
+      // Per prevenire problemi con testi troppo lunghi, dividiamo il testo in frasi
+      // e creiamo un utterance per ogni frase
+      const sentences = dreamStory
+        .replace(/([.!?])\s*/g, "$1|")
+        .split("|")
+        .filter(sentence => sentence.trim().length > 0);
       
-      // Event handlers
-      utterance.onstart = () => {
-        setIsPlaying(true);
-        
-        // Avvia l'ambience se attivato
-        if (enableAmbience) {
-          playAmbience();
+      if (sentences.length === 0) {
+        throw new Error("Nessuna frase valida trovata nel testo");
+      }
+      
+      // Impostiamo un flag per tenere traccia del completamento
+      let isFirstSentence = true;
+      let totalSentences = sentences.length;
+      let completedSentences = 0;
+      
+      // Funzione per pronunciare una frase alla volta
+      const speakSentence = (index) => {
+        if (index >= sentences.length) {
+          // Tutte le frasi sono state pronunciate
+          setIsPlaying(false);
+          setProgress(100);
+          
+          // Ferma il monitoraggio del progresso
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+          
+          // Ferma l'ambience con fade out
+          if (ambiencePlayerRef.current) {
+            stopAmbience(true);
+          }
+          
+          toast({
+            description: "Narrazione completata.",
+          });
+          return;
         }
         
-        // Inizia a tracciare il progresso
-        totalLengthRef.current = dreamStory.length;
+        const utterance = new SpeechSynthesisUtterance(sentences[index]);
+        utteranceRef.current = utterance;
         
-        // Aggiorna il progresso periodicamente
-        intervalRef.current = window.setInterval(() => {
-          const currentChar = synth.speaking ? currentPositionRef.current : totalLengthRef.current;
-          const percentage = Math.min(100, Math.round((currentChar / totalLengthRef.current) * 100));
-          setProgress(percentage);
-        }, 100);
+        // Imposta i parametri della voce
+        if (selectedVoiceObj) {
+          utterance.voice = selectedVoiceObj;
+        }
+        
+        utterance.rate = rate;
+        utterance.pitch = pitch;
+        utterance.volume = volume;
+        
+        // Event handlers
+        utterance.onstart = () => {
+          setIsPlaying(true);
+          
+          // Avvia l'ambience se attivato e se è la prima frase
+          if (enableAmbience && isFirstSentence) {
+            playAmbience();
+            isFirstSentence = false;
+          }
+          
+          // Imposta la lunghezza totale per il tracking del progresso
+          if (totalLengthRef.current === 0) {
+            totalLengthRef.current = dreamStory.length;
+          }
+          
+          // Avvia il monitoraggio del progresso se è la prima frase
+          if (isFirstSentence && !intervalRef.current) {
+            intervalRef.current = window.setInterval(() => {
+              // Calcola il progresso basato sul numero di frasi completate
+              const percentage = Math.min(100, Math.round((completedSentences / totalSentences) * 100));
+              setProgress(percentage);
+            }, 100);
+          }
+        };
+        
+        utterance.onpause = () => setIsPlaying(false);
+        utterance.onresume = () => setIsPlaying(true);
+        
+        utterance.onend = () => {
+          // Segna questa frase come completata
+          completedSentences++;
+          
+          // Passa alla prossima frase
+          speakSentence(index + 1);
+        };
+        
+        utterance.onerror = (event) => {
+          console.error('Errore nella sintesi vocale per la frase:', sentences[index], event);
+          
+          // Tenta di andare avanti alla prossima frase invece di fermarsi completamente
+          completedSentences++;
+          console.log(`Tentativo di proseguire con la prossima frase (${index + 1}/${sentences.length})...`);
+          speakSentence(index + 1);
+        };
+        
+        // Avvia la sintesi vocale per questa frase
+        synth.speak(utterance);
       };
       
-      utterance.onpause = () => setIsPlaying(false);
-      utterance.onresume = () => setIsPlaying(true);
-      
-      utterance.onboundary = (event) => {
-        currentPositionRef.current = event.charIndex;
-      };
-      
-      utterance.onend = () => {
-        setIsPlaying(false);
-        setProgress(100);
-        
-        // Ferma il monitoraggio del progresso
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-        
-        // Ferma l'ambience con fade out
-        if (ambiencePlayerRef.current) {
-          stopAmbience(true);
-        }
-        
-        toast({
-          description: "Narrazione completata.",
-        });
-      };
-      
-      utterance.onerror = (event) => {
-        console.error('Errore nella sintesi vocale:', event);
-        setIsPlaying(false);
-        
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-        
-        if (ambiencePlayerRef.current) {
-          stopAmbience();
-        }
-        
-        toast({
-          variant: "destructive",
-          description: "Si è verificato un errore durante la narrazione.",
-        });
-      };
-      
-      // Avvia la sintesi vocale
-      synth.speak(utterance);
+      // Inizia la riproduzione dalla prima frase
+      speakSentence(0);
       
     } catch (error) {
       console.error('Errore nell\'avvio della riproduzione:', error);
-      toast({
-        variant: "destructive",
-        description: "Errore nell'avvio della narrazione. Riprova.",
-      });
+      
+      // Fallback: avvia solo l'audio ambientale se la sintesi vocale fallisce
+      if (enableAmbience) {
+        setIsPlaying(true);
+        playAmbience();
+        
+        toast({
+          variant: "warning",
+          description: "La sintesi vocale non è disponibile. Riproduco solo l'audio ambientale.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          description: "Errore nell'avvio della narrazione: " + (error.message || "Problemi con la sintesi vocale"),
+        });
+      }
     }
   };
   
