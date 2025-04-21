@@ -268,7 +268,7 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
       let completedSentences = 0;
       
       // Funzione per pronunciare una frase alla volta
-      const speakSentence = (index) => {
+      const speakSentence = (index: number) => {
         if (index >= sentences.length) {
           // Tutte le frasi sono state pronunciate
           setIsPlaying(false);
@@ -355,7 +355,8 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
       // Inizia la riproduzione dalla prima frase
       speakSentence(0);
       
-    } catch (error) {
+    } catch (err) {
+      const error = err as Error;
       console.error('Errore nell\'avvio della riproduzione:', error);
       
       // Fallback: avvia solo l'audio ambientale se la sintesi vocale fallisce
@@ -364,7 +365,7 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
         playAmbience();
         
         toast({
-          variant: "warning",
+          variant: "destructive",
           description: "La sintesi vocale non è disponibile. Riproduco solo l'audio ambientale.",
         });
       } else {
@@ -378,19 +379,35 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
   
   // Funzione per mettere in pausa/riprendere la riproduzione
   const togglePlayback = () => {
-    if (synth.speaking) {
-      if (synth.paused) {
-        synth.resume();
-        if (ambiencePlayerRef.current && ambiencePlayerRef.current.synth && ambiencePlayerRef.current.synth.volume) {
-          ambiencePlayerRef.current.synth.volume.rampTo(ambienceVolume * -10, 0.5);
+    try {
+      if (synth.speaking) {
+        if (synth.paused) {
+          synth.resume();
+          // Ripristina il volume dell'ambience se presente
+          if (ambiencePlayerRef.current && ambiencePlayerRef.current.synth && ambiencePlayerRef.current.synth.volume) {
+            try {
+              ambiencePlayerRef.current.synth.volume.rampTo(ambienceVolume * -10, 0.5);
+            } catch (error) {
+              console.error("Errore nel ripristino del volume ambientale:", error);
+            }
+          }
+        } else {
+          synth.pause();
+          // Abbassa il volume dell'ambience ma non fermarlo
+          if (ambiencePlayerRef.current && ambiencePlayerRef.current.synth && ambiencePlayerRef.current.synth.volume) {
+            try {
+              ambiencePlayerRef.current.synth.volume.rampTo(-Infinity, 0.5);
+            } catch (error) {
+              console.error("Errore nell'abbassamento del volume ambientale:", error);
+            }
+          }
         }
       } else {
-        synth.pause();
-        if (ambiencePlayerRef.current && ambiencePlayerRef.current.synth && ambiencePlayerRef.current.synth.volume) {
-          ambiencePlayerRef.current.synth.volume.rampTo(-Infinity, 0.5);
-        }
+        startPlayback();
       }
-    } else {
+    } catch (error) {
+      console.error("Errore nel controllo della riproduzione:", error);
+      // Se c'è un errore, proviamo a riavviare la riproduzione
       startPlayback();
     }
   };
@@ -698,10 +715,14 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
   const changeAmbienceVolume = (value: number) => {
     setAmbienceVolume(value);
     if (ambiencePlayerRef.current && ambiencePlayerRef.current.synth && ambiencePlayerRef.current.synth.volume) {
-      // Applica un fattore di scala per mantenere il volume in un intervallo ragionevole
-      // Valori più bassi (più negativi) sono più silenziosi in Tone.js
-      const scaledVolume = value * -20; // Scale da 0-1 a 0 a -20
-      ambiencePlayerRef.current.synth.volume.rampTo(scaledVolume, 0.1);
+      try {
+        // Applica un fattore di scala per mantenere il volume in un intervallo ragionevole
+        // Valori più bassi (più negativi) sono più silenziosi in Tone.js
+        const scaledVolume = value * -20; // Scale da 0-1 a 0 a -20
+        ambiencePlayerRef.current.synth.volume.rampTo(scaledVolume, 0.1);
+      } catch (error) {
+        console.error("Errore nella regolazione del volume:", error);
+      }
     }
   };
   
