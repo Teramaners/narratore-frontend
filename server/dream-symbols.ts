@@ -80,12 +80,12 @@ export async function extractDreamSymbols(dreamText: string, includePositions: b
     } catch (apiError) {
       // Se l'API fallisce (es. quota superata), utilizza i dati di fallback
       console.log('API Gemini non disponibile, utilizzo dati di fallback');
-      return getFallbackExtractedSymbols(dreamText);
+      return getFallbackExtractedSymbols(dreamText, includePositions);
     }
   } catch (error) {
     console.error('Errore nell\'estrazione dei simboli del sogno:', error);
     // Utilizza i dati di fallback in caso di errore
-    return getFallbackExtractedSymbols(dreamText);
+    return getFallbackExtractedSymbols(dreamText, includePositions);
   }
 }
 

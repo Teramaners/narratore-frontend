@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Search, X, Book, ArrowRight, Loader2 } from "lucide-react";
+import { Search, X, Book, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { DreamSymbolHighlighter } from "./dream-symbol-highlighter";
 
 interface DreamSymbol {
   symbol: string;
@@ -221,7 +222,22 @@ export function DreamSymbolDictionary({ dreamContent }: DreamSymbolDictionaryPro
           </div>
           
           {extractSymbolsMutation.data?.mainSymbols && extractSymbolsMutation.data.mainSymbols.length > 0 && (
-            <div className="space-y-4 mt-4">
+            <div className="space-y-6 mt-4">
+              {/* Testo del sogno con simboli evidenziati */}
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <h4 className="text-sm font-medium mb-2 flex items-center">
+                  <Sparkles className="h-3.5 w-3.5 text-primary mr-1.5" />
+                  Testo con Simboli Interattivi
+                </h4>
+                <div className="text-sm leading-relaxed">
+                  <DreamSymbolHighlighter 
+                    text={dreamContent}
+                    onSymbolClick={handleSymbolClick}
+                    className="prose prose-sm max-w-none"
+                  />
+                </div>
+              </div>
+              
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
