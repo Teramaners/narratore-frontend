@@ -14,7 +14,44 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "default_key"
 
 interface StoryResponse {
   story: string;
+  title?: string;
 }
+
+// Definizione degli stili letterari disponibili
+export interface LiteraryStyle {
+  id: string;
+  name: string;
+  description: string;
+}
+
+// Stili letterari predefiniti
+export const literaryStyles: LiteraryStyle[] = [
+  {
+    id: "surrealista",
+    name: "Surrealista",
+    description: "Un racconto onirico con elementi fantastici e simbolismi astratti"
+  },
+  {
+    id: "avventura",
+    name: "Avventura",
+    description: "Un racconto ricco di azione, esplorazione e tensione"
+  },
+  {
+    id: "romantico",
+    name: "Romantico",
+    description: "Un racconto che evoca emozioni, relazioni e sentimenti profondi"
+  },
+  {
+    id: "thriller",
+    name: "Thriller",
+    description: "Un racconto carico di suspense, mistero e colpi di scena"
+  },
+  {
+    id: "fantasy",
+    name: "Fantasy",
+    description: "Un racconto ambientato in mondi magici con elementi soprannaturali"
+  }
+];
 
 interface EmojiExplanation {
   emoji: string;
@@ -45,8 +82,34 @@ export interface SentimentAnalysisResponse {
   analysis: string;
 }
 
-export async function generateStoryFromDream(dream: string): Promise<StoryResponse> {
+interface StoryGenerationOptions {
+  style?: string;  // ID dello stile letterario
+  length?: 'breve' | 'medio' | 'lungo';  // Lunghezza del racconto
+  tone?: string;  // Tono del racconto (es. "drammatico", "comico", "riflessivo")
+  includeTitle?: boolean;  // Se separare il titolo dal contenuto
+}
+
+export async function generateStoryFromDream(
+  dream: string, 
+  options: StoryGenerationOptions = {}
+): Promise<StoryResponse> {
   try {
+    // Opzioni di default
+    const style = options.style || 'surrealista';
+    const length = options.length || 'medio';
+    const tone = options.tone || 'onirico';
+    const includeTitle = options.includeTitle !== undefined ? options.includeTitle : true;
+    
+    // Limiti di parole in base alla lunghezza
+    const wordLimits = {
+      breve: "300-400",
+      medio: "500-600",
+      lungo: "800-1000"
+    };
+    
+    // Trova lo stile letterario dalle opzioni predefinite
+    const literaryStyle = literaryStyles.find(s => s.id === style) || literaryStyles[0];
+    
     // Verifica disponibilità API key
     if (!process.env.GEMINI_API_KEY) {
       console.log('GEMINI_API_KEY non trovata, utilizzo sistema di fallback per la generazione della storia');
@@ -57,8 +120,21 @@ export async function generateStoryFromDream(dream: string): Promise<StoryRespon
       // Utilizza il modello gemini-1.5-pro-latest
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
 
-      // Sistema prompt per la generazione di storie dai sogni
-      const systemPrompt = "Sei 'Narratore di Sogni', un esperto narratore letterario. Il tuo compito è trasformare la descrizione di un sogno dell'utente in un bellissimo racconto letterario breve. Segui queste linee guida: 1) Mantieni gli elementi e le immagini principali del sogno, 2) Aggiungi struttura letteraria, personaggi e flusso narrativo, 3) Usa descrizioni vivide e linguaggio elegante, 4) Crea un chiaro inizio, sviluppo e conclusione, 5) Aggiungi un titolo creativo all'inizio. Il tono deve essere mistico, evocativo e onirico. La lunghezza massima deve essere di circa 500-600 parole.";
+      // Sistema prompt per la generazione di storie dai sogni con opzioni personalizzate
+      const systemPrompt = `Sei 'Narratore di Sogni', un esperto narratore letterario specializzato nello stile ${literaryStyle.name.toLowerCase()}.
+      
+Il tuo compito è trasformare la descrizione di un sogno dell'utente in un bellissimo racconto letterario. 
+
+Segui queste linee guida:
+1) Mantieni gli elementi e le immagini principali del sogno
+2) Aggiungi struttura letteraria, personaggi e flusso narrativo
+3) Usa descrizioni vivide e linguaggio elegante in stile ${literaryStyle.name.toLowerCase()} (${literaryStyle.description})
+4) Crea un chiaro inizio, sviluppo e conclusione
+5) Scrivi con un tono ${tone}
+6) Il racconto deve avere un titolo creativo
+7) La lunghezza deve essere di circa ${wordLimits[length]} parole
+
+${includeTitle ? "Inizia il racconto con il titolo in grassetto tra asterischi (**Titolo**), seguito da una riga vuota e poi il racconto." : "Includi il titolo in cima come parte integrante del racconto, senza formattazioni speciali."}`;
 
       // Generate content
       const result = await model.generateContent([
@@ -68,6 +144,19 @@ export async function generateStoryFromDream(dream: string): Promise<StoryRespon
       
       const response = result.response;
       const text = response.text();
+      
+      // Se è richiesto di separare il titolo, lo estraiamo dal testo
+      if (includeTitle) {
+        const titleMatch = text.match(/^\*\*(.+?)\*\*/);
+        if (titleMatch) {
+          const title = titleMatch[1];
+          const storyText = text.replace(/^\*\*(.+?)\*\*\s*\n+/, '').trim();
+          return { 
+            story: storyText,
+            title: title
+          };
+        }
+      }
 
       return { story: text };
     } catch (apiError) {
