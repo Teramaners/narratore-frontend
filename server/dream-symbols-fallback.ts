@@ -139,7 +139,53 @@ export const fallbackDreamSymbols: FallbackDreamSymbols = {
 };
 
 // Restituisce simboli estratti da un testo di sogno (simulazione)
-export function getFallbackExtractedSymbols(dreamText: string) {
+// Interfaccia per le posizioni dei simboli
+interface SymbolPosition {
+  symbol: string;
+  start: number;
+  end: number;
+}
+
+// Funzione per trovare le posizioni dei simboli nel testo
+function findSymbolPositionsInText(text: string, symbols: Array<{symbol: string; briefDescription: string}>): SymbolPosition[] {
+  const positions: SymbolPosition[] = [];
+  const lowerText = text.toLowerCase();
+  
+  symbols.forEach(symbolObj => {
+    const symbolLower = symbolObj.symbol.toLowerCase();
+    let startPos = 0;
+    
+    // Per ogni simbolo, trova tutte le occorrenze
+    while (startPos < lowerText.length) {
+      const foundIndex = lowerText.indexOf(symbolLower, startPos);
+      if (foundIndex === -1) break;
+      
+      // Verifica che l'occorrenza sia una parola completa
+      const prevChar = foundIndex > 0 ? lowerText[foundIndex - 1] : ' ';
+      const nextChar = foundIndex + symbolLower.length < lowerText.length 
+        ? lowerText[foundIndex + symbolLower.length] 
+        : ' ';
+      
+      const isPrevBoundary = /[\s.,;:!?\"'()[\]{}]/.test(prevChar);
+      const isNextBoundary = /[\s.,;:!?\"'()[\]{}]/.test(nextChar);
+      
+      if (isPrevBoundary && isNextBoundary) {
+        positions.push({
+          symbol: symbolObj.symbol,
+          start: foundIndex,
+          end: foundIndex + symbolObj.symbol.length
+        });
+      }
+      
+      startPos = foundIndex + 1;
+    }
+  });
+  
+  // Ordina le posizioni per inizio
+  return positions.sort((a, b) => a.start - b.start);
+}
+
+export function getFallbackExtractedSymbols(dreamText: string, includePositions: boolean = false) {
   // Lista di parole chiave da cercare nel testo del sogno
   const keywordsToSymbols: {[key: string]: string} = {
     // Acqua e relativi
@@ -329,7 +375,14 @@ export function getFallbackExtractedSymbols(dreamText: string) {
     };
   });
   
-  return {
+  const result: any = {
     mainSymbols: extractedSymbols
   };
+  
+  // Se richiesto, aggiungi le posizioni dei simboli nel testo
+  if (includePositions && extractedSymbols.length > 0) {
+    result.symbolPositions = findSymbolPositionsInText(dreamText, extractedSymbols);
+  }
+  
+  return result;
 }

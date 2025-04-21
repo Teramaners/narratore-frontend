@@ -362,13 +362,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Estrai i simboli principali da un testo di sogno
   app.post("/api/simboli-sogno/estrai", async (req, res) => {
     try {
-      const { testo } = req.body;
+      const { testo, includePositions } = req.body;
       
       if (!testo || typeof testo !== "string" || testo.trim() === "") {
         return res.status(400).json({ error: "Il testo del sogno è richiesto" });
       }
       
-      const simboli = await extractDreamSymbols(testo);
+      const simboli = await extractDreamSymbols(testo, includePositions === true);
       return res.status(200).json(simboli);
     } catch (error: any) {
       console.error("Error extracting dream symbols:", error);
