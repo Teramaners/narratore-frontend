@@ -6,6 +6,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import { generateFallbackStory } from './story-fallback';
+import { generateFallbackEmojiTranslation } from './emoji-fallback';
+import { generateFallbackEmotionAnalysis } from './emotions-fallback';
 
 // Inizializza il client Google Generative AI con l'API key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "default_key");
@@ -82,11 +84,18 @@ export async function generateStoryFromDream(dream: string): Promise<StoryRespon
 
 export async function generateEmojiTranslation(dream: string): Promise<EmojiResponse> {
   try {
-    // Utilizza il modello gemini-1.5-pro-latest per generare sequenza di emoji
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+    // Verifica disponibilità API key
+    if (!process.env.GEMINI_API_KEY) {
+      console.log('GEMINI_API_KEY non trovata, utilizzo sistema di fallback per la traduzione emoji');
+      return generateFallbackEmojiTranslation(dream);
+    }
 
-    // Sistema prompt per la generazione di emoji dai sogni con spiegazioni
-    const systemPrompt = `Sei 'Traduttore di Sogni in Emoji', un esperto in trasformare i sogni in sequenze di emoji significative e personalizzate.
+    try {
+      // Utilizza il modello gemini-1.5-pro-latest per generare sequenza di emoji
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+
+      // Sistema prompt per la generazione di emoji dai sogni con spiegazioni
+      const systemPrompt = `Sei 'Traduttore di Sogni in Emoji', un esperto in trasformare i sogni in sequenze di emoji significative e personalizzate.
 
 Il tuo compito è prendere la descrizione del sogno dell'utente e creare:
 1. Una sequenza di 8-15 emoji che racconti il sogno in modo visivo
@@ -114,140 +123,162 @@ Restituisci la risposta in formato JSON con questa struttura:
 }
 `;
 
-    // Generate content
-    const result = await model.generateContent([
-      systemPrompt,
-      dream
-    ]);
-    
-    const response = result.response;
-    const responseText = response.text().trim();
-
-    // Estrai il JSON dalla risposta (potrebbe essere circondato da backtick o altro)
-    let jsonText = responseText;
-    const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (jsonMatch && jsonMatch[1]) {
-      jsonText = jsonMatch[1].trim();
-    }
-
-    try {
-      // Parsa il JSON
-      const emojiData = JSON.parse(jsonText);
+      // Generate content
+      const result = await model.generateContent([
+        systemPrompt,
+        dream
+      ]);
       
-      // Validazione basilare
-      if (!emojiData.emojiTranslation) {
-        // Fallback nel caso il formato JSON non sia rispettato
-        return { emojiTranslation: responseText.replace(/[*_`]|```json|```/g, '').trim() };
+      const response = result.response;
+      const responseText = response.text().trim();
+
+      // Estrai il JSON dalla risposta (potrebbe essere circondato da backtick o altro)
+      let jsonText = responseText;
+      const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        jsonText = jsonMatch[1].trim();
       }
-      
-      return {
-        emojiTranslation: emojiData.emojiTranslation,
-        emojiExplanations: emojiData.emojiExplanations || [],
-        emojiMood: emojiData.emojiMood
-      };
-    } catch (jsonError) {
-      console.error('Errore nel parsing JSON delle emoji:', jsonError, 'Testo ricevuto:', jsonText);
-      
-      // Fallback: invece di cercare di estrarre le emoji (che può essere complicato),
-      // usiamo un metodo più diretto e restituiamo una risposta predefinita
-      return { 
-        emojiTranslation: '🤔✨🌙💭' 
-      };
+
+      try {
+        // Parsa il JSON
+        const emojiData = JSON.parse(jsonText);
+        
+        // Validazione basilare
+        if (!emojiData.emojiTranslation) {
+          // Fallback nel caso il formato JSON non sia rispettato
+          console.log('Risposta JSON non valida, utilizzo sistema di fallback per la traduzione emoji');
+          return generateFallbackEmojiTranslation(dream);
+        }
+        
+        return {
+          emojiTranslation: emojiData.emojiTranslation,
+          emojiExplanations: emojiData.emojiExplanations || [],
+          emojiMood: emojiData.emojiMood
+        };
+      } catch (jsonError) {
+        console.error('Errore nel parsing JSON delle emoji:', jsonError, 'Testo ricevuto:', jsonText);
+        
+        // Utilizziamo il sistema di fallback più robusto
+        console.log('Errore nel parsing JSON, utilizzo sistema di fallback per la traduzione emoji');
+        return generateFallbackEmojiTranslation(dream);
+      }
+    } catch (apiError) {
+      // Se l'API fallisce (es. quota superata), utilizza il sistema di fallback
+      console.log('API Gemini non disponibile, utilizzo sistema di fallback per la traduzione emoji:', apiError);
+      return generateFallbackEmojiTranslation(dream);
     }
   } catch (error: any) {
-    console.error("Error generating emoji translation:", error);
-    throw new Error(`Gemini API error: ${error?.message || 'Unknown error'}`);
+    console.error("Errore nella generazione della traduzione emoji:", error);
+    // In caso di qualsiasi errore, utilizza comunque il fallback
+    return generateFallbackEmojiTranslation(dream);
   }
 }
 
 export async function analyzeEmotionsInDream(dream: string, story: string): Promise<SentimentAnalysisResponse> {
   try {
-    // Utilizza il modello gemini-1.5-pro-latest
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
-
-    // Prompt per l'analisi delle emozioni
-    const prompt = `
-    Sei uno psicologo esperto nell'analisi delle emozioni nei sogni.
-    
-    Ecco un sogno e il racconto elaborato:
-    
-    Sogno originale: "${dream}"
-    
-    Racconto elaborato: "${story}"
-    
-    Esegui un'analisi emotiva dettagliata e restituisci il risultato in formato JSON con la seguente struttura:
-    
-    {
-      "primaryEmotion": "Nome dell'emozione principale rilevata",
-      "emotions": [
-        {
-          "name": "Nome dell'emozione",
-          "intensity": numeroDa0a10,
-          "description": "Breve descrizione di come quest'emozione si manifesta nel sogno",
-          "color": "Codice colore esadecimale che rappresenta questa emozione"
-        },
-        ...
-      ],
-      "analysis": "Breve analisi (3-4 frasi) delle emozioni complesse presenti nel sogno"
-    }
-    
-    Note:
-    1. Identifica almeno 3-5 emozioni diverse presenti nel sogno
-    2. Assegna a ciascuna un'intensità compresa tra 0 e 10
-    3. Per i colori, usa codici esadecimali che riflettano l'emozione:
-       - Felicità/Gioia: tonalità di giallo e arancione (#FFD700, #FFA500, ecc.)
-       - Tristezza: tonalità di blu (#4682B4, #1E90FF, ecc.)
-       - Paura: tonalità di viola scuro o grigio (#4B0082, #708090, ecc.)
-       - Rabbia: tonalità di rosso (#FF0000, #8B0000, ecc.)
-       - Sorpresa: tonalità di verde chiaro o turchese (#00FA9A, #00CED1, ecc.)
-       - Disgusto: tonalità di verde oliva o marrone (#556B2F, #8B4513, ecc.)
-       - Calma/Serenità: tonalità di azzurro chiaro (#B0E0E6, #87CEEB, ecc.)
-       - Confusione: tonalità di lavanda o indaco (#E6E6FA, #6A5ACD, ecc.)
-       - Nostalgia: tonalità di rosa o pesca (#FFC0CB, #FFDAB9, ecc.)
-    
-    I nomi delle emozioni devono essere in italiano.
-    Le descrizioni devono essere in italiano.
-    
-    Restituisci solo il JSON valido, senza alcun altro testo o spiegazione.
-    `;
-
-    // Genera il contenuto
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text().trim();
-
-    // Cerca di estrarre il JSON dalla risposta (potrebbe essere circondato da backtick o altro)
-    let jsonText = text;
-    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (jsonMatch && jsonMatch[1]) {
-      jsonText = jsonMatch[1].trim();
+    // Verifica disponibilità API key
+    if (!process.env.GEMINI_API_KEY) {
+      console.log('GEMINI_API_KEY non trovata, utilizzo sistema di fallback per l\'analisi delle emozioni');
+      return generateFallbackEmotionAnalysis(dream, story);
     }
 
-    // Parsa il JSON
     try {
-      const emotionsData = JSON.parse(jsonText);
+      // Utilizza il modello gemini-1.5-pro-latest
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+
+      // Prompt per l'analisi delle emozioni
+      const prompt = `
+      Sei uno psicologo esperto nell'analisi delle emozioni nei sogni.
       
-      // Validazione basilare
-      if (!emotionsData.primaryEmotion || !Array.isArray(emotionsData.emotions) || !emotionsData.analysis) {
-        throw new Error('Il formato della risposta JSON non è corretto');
+      Ecco un sogno e il racconto elaborato:
+      
+      Sogno originale: "${dream}"
+      
+      Racconto elaborato: "${story}"
+      
+      Esegui un'analisi emotiva dettagliata e restituisci il risultato in formato JSON con la seguente struttura:
+      
+      {
+        "primaryEmotion": "Nome dell'emozione principale rilevata",
+        "emotions": [
+          {
+            "name": "Nome dell'emozione",
+            "intensity": numeroDa0a10,
+            "description": "Breve descrizione di come quest'emozione si manifesta nel sogno",
+            "color": "Codice colore esadecimale che rappresenta questa emozione"
+          },
+          ...
+        ],
+        "analysis": "Breve analisi (3-4 frasi) delle emozioni complesse presenti nel sogno"
       }
       
-      // Normalizza i dati di intensità per assicurarsi che siano numeri
-      emotionsData.emotions = emotionsData.emotions.map((emotion: any) => ({
-        ...emotion,
-        intensity: typeof emotion.intensity === 'string' 
-          ? parseFloat(emotion.intensity) 
-          : emotion.intensity
-      }));
+      Note:
+      1. Identifica almeno 3-5 emozioni diverse presenti nel sogno
+      2. Assegna a ciascuna un'intensità compresa tra 0 e 10
+      3. Per i colori, usa codici esadecimali che riflettano l'emozione:
+         - Felicità/Gioia: tonalità di giallo e arancione (#FFD700, #FFA500, ecc.)
+         - Tristezza: tonalità di blu (#4682B4, #1E90FF, ecc.)
+         - Paura: tonalità di viola scuro o grigio (#4B0082, #708090, ecc.)
+         - Rabbia: tonalità di rosso (#FF0000, #8B0000, ecc.)
+         - Sorpresa: tonalità di verde chiaro o turchese (#00FA9A, #00CED1, ecc.)
+         - Disgusto: tonalità di verde oliva o marrone (#556B2F, #8B4513, ecc.)
+         - Calma/Serenità: tonalità di azzurro chiaro (#B0E0E6, #87CEEB, ecc.)
+         - Confusione: tonalità di lavanda o indaco (#E6E6FA, #6A5ACD, ecc.)
+         - Nostalgia: tonalità di rosa o pesca (#FFC0CB, #FFDAB9, ecc.)
       
-      return emotionsData;
-    } catch (jsonError) {
-      console.error('Errore nel parsing JSON:', jsonError, 'Testo ricevuto:', jsonText);
-      throw new Error('Impossibile interpretare la risposta come JSON valido');
+      I nomi delle emozioni devono essere in italiano.
+      Le descrizioni devono essere in italiano.
+      
+      Restituisci solo il JSON valido, senza alcun altro testo o spiegazione.
+      `;
+
+      // Genera il contenuto
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const text = response.text().trim();
+
+      // Cerca di estrarre il JSON dalla risposta (potrebbe essere circondato da backtick o altro)
+      let jsonText = text;
+      const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        jsonText = jsonMatch[1].trim();
+      }
+
+      // Parsa il JSON
+      try {
+        const emotionsData = JSON.parse(jsonText);
+        
+        // Validazione basilare
+        if (!emotionsData.primaryEmotion || !Array.isArray(emotionsData.emotions) || !emotionsData.analysis) {
+          console.log('Risposta JSON non valida, utilizzo sistema di fallback per l\'analisi delle emozioni');
+          return generateFallbackEmotionAnalysis(dream, story);
+        }
+        
+        // Normalizza i dati di intensità per assicurarsi che siano numeri
+        emotionsData.emotions = emotionsData.emotions.map((emotion: any) => ({
+          ...emotion,
+          intensity: typeof emotion.intensity === 'string' 
+            ? parseFloat(emotion.intensity) 
+            : emotion.intensity
+        }));
+        
+        return emotionsData;
+      } catch (jsonError) {
+        console.error('Errore nel parsing JSON:', jsonError, 'Testo ricevuto:', jsonText);
+        
+        // Utilizziamo il sistema di fallback più robusto
+        console.log('Errore nel parsing JSON, utilizzo sistema di fallback per l\'analisi delle emozioni');
+        return generateFallbackEmotionAnalysis(dream, story);
+      }
+    } catch (apiError) {
+      // Se l'API fallisce (es. quota superata), utilizza il sistema di fallback
+      console.log('API Gemini non disponibile, utilizzo sistema di fallback per l\'analisi delle emozioni:', apiError);
+      return generateFallbackEmotionAnalysis(dream, story);
     }
   } catch (error: any) {
     console.error('Errore nell\'analisi delle emozioni:', error);
-    throw new Error(`Errore nell'analisi delle emozioni: ${error?.message || 'Errore sconosciuto'}`);
+    // In caso di qualsiasi errore, utilizza comunque il fallback
+    return generateFallbackEmotionAnalysis(dream, story);
   }
 }
 
