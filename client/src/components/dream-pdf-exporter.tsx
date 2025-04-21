@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from '@/hooks/use-toast';
-import { Download, FileText, BookOpen, CheckCircle, Settings } from 'lucide-react';
+import { Download, FileText, BookOpen, CheckCircle, Settings, Book } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toPng } from 'html-to-image';
@@ -48,6 +48,7 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
   const [includeEmotions, setIncludeEmotions] = useState(true);
   const [selectedDreamIds, setSelectedDreamIds] = useState<number[]>([]);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'pdf' | 'epub'>('pdf');
   
   // Prepara i dati del sogno per l'esportazione
   const prepareDreamData = (dream: Dream) => {
@@ -435,6 +436,177 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
     }
   };
   
+  // Funzione per generare un ebook EPUB con la collezione di sogni
+  const exportDreamCollectionToEpub = async () => {
+    // Filtra i sogni in base alle selezioni
+    let dreamsToExport: Dream[] = [];
+    
+    if (selectedDreamIds.length > 0) {
+      // Usa solo i sogni selezionati
+      dreamsToExport = allDreams.filter(dream => selectedDreamIds.includes(dream.id));
+    } else if (onlyFavorites) {
+      // Filtra solo i preferiti
+      dreamsToExport = allDreams.filter(dream => {
+        const isFavorite = dream.isFavorite !== undefined ? dream.isFavorite : 
+                          dream.preferito !== undefined ? dream.preferito : false;
+        return typeof isFavorite === 'number' ? isFavorite > 0 : isFavorite;
+      });
+    } else {
+      // Usa tutti i sogni
+      dreamsToExport = [...allDreams];
+    }
+    
+    if (dreamsToExport.length === 0) {
+      toast({
+        variant: "destructive",
+        description: "Nessun sogno selezionato per l'esportazione.",
+      });
+      return;
+    }
+    
+    try {
+      setExporting(true);
+      
+      // Ordina i sogni per data se disponibile
+      const sortedDreams = [...dreamsToExport].sort((a, b) => {
+        if (!a.createdAt || !b.createdAt) return 0;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      
+      // Prepara i dati per il backend
+      const requestData = {
+        sogni: sortedDreams.map(dream => prepareDreamData(dream)),
+        titolo: collectionTitle,
+        autore: authorName,
+        copertina: null, // Per ora non supportiamo una copertina personalizzata
+      };
+      
+      // Fai una richiesta al backend per generare l'ebook
+      const response = await fetch('/api/genera-ebook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore nella generazione dell\'ebook');
+      }
+      
+      // Scarica il file EPUB
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      // Crea un link per il download e clicca automaticamente
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${collectionTitle.replace(/\s+/g, '-')}.epub`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Pulisci
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        description: `Ebook EPUB con ${dreamsToExport.length} sogni esportato con successo!`,
+      });
+    } catch (error) {
+      console.error('Errore durante l\'esportazione dell\'ebook:', error);
+      toast({
+        variant: "destructive",
+        description: "Errore durante l'esportazione dell'ebook. Riprova.",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+  
+  // Funzione per esportare un singolo sogno in formato EPUB
+  const exportSingleDreamToEpub = async () => {
+    if (!currentDream) {
+      toast({
+        variant: "destructive",
+        description: "Nessun sogno selezionato da esportare.",
+      });
+      return;
+    }
+    
+    try {
+      setExporting(true);
+      const dream = prepareDreamData(currentDream);
+      
+      // Prepara i dati per il backend
+      const requestData = {
+        sogni: [dream],
+        titolo: `Sogno: ${dream.content.substring(0, 30)}${dream.content.length > 30 ? '...' : ''}`,
+        autore: authorName || "Narratore di Sogni",
+        copertina: null,
+      };
+      
+      // Fai una richiesta al backend per generare l'ebook
+      const response = await fetch('/api/genera-ebook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore nella generazione dell\'ebook');
+      }
+      
+      // Scarica il file EPUB
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      // Crea un link per il download e clicca automaticamente
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Sogno-${dream.id}.epub`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Pulisci
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        description: "Ebook EPUB del sogno esportato con successo!",
+      });
+    } catch (error) {
+      console.error('Errore durante l\'esportazione dell\'ebook:', error);
+      toast({
+        variant: "destructive",
+        description: "Errore durante l'esportazione dell'ebook. Riprova.",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+  
+  // Funzione principale per l'esportazione in base al formato selezionato
+  const exportSingleDream = () => {
+    if (exportFormat === 'pdf') {
+      exportSingleDreamToPdf();
+    } else {
+      exportSingleDreamToEpub();
+    }
+  };
+  
+  // Funzione principale per l'esportazione della collezione in base al formato selezionato
+  const exportDreamCollection = () => {
+    if (exportFormat === 'pdf') {
+      exportDreamCollectionToPdf();
+    } else {
+      exportDreamCollectionToEpub();
+    }
+  };
+  
   // Gestisce il toggle della selezione di un sogno
   const toggleDreamSelection = (dreamId: number) => {
     setSelectedDreamIds(prev => 
@@ -467,10 +639,30 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
           <TabsContent value="single" className="space-y-4">
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                Esporta il sogno corrente come documento PDF facilmente condivisibile.
+                Esporta il sogno corrente come documento PDF o ebook EPUB facilmente condivisibile.
               </div>
               
               <div className="space-y-2">
+                <label className="text-sm font-medium mb-2 block">Formato di esportazione:</label>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Button 
+                    variant={exportFormat === 'pdf' ? 'default' : 'outline'} 
+                    className="flex-1"
+                    onClick={() => setExportFormat('pdf')}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    PDF
+                  </Button>
+                  <Button 
+                    variant={exportFormat === 'epub' ? 'default' : 'outline'} 
+                    className="flex-1"
+                    onClick={() => setExportFormat('epub')}
+                  >
+                    <Book className="h-4 w-4 mr-2" />
+                    EPUB
+                  </Button>
+                </div>
+                
                 <div className="flex items-center space-x-2">
                   <Switch 
                     id="include-images-single" 
@@ -500,7 +692,7 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
               </div>
               
               <Button 
-                onClick={exportSingleDreamToPdf} 
+                onClick={exportSingleDream} 
                 disabled={!currentDream || exporting}
                 className="w-full"
               >
@@ -509,7 +701,7 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
                 ) : (
                   <>
                     <Download className="mr-2 h-4 w-4" />
-                    Esporta sogno corrente in PDF
+                    Esporta sogno corrente in {exportFormat === 'pdf' ? 'PDF' : 'EPUB'}
                   </>
                 )}
               </Button>
@@ -520,7 +712,7 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
           <TabsContent value="collection" className="space-y-4">
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                Crea un eBook PDF con una collezione dei tuoi sogni preferiti o selezionati.
+                Crea un eBook PDF o EPUB con una collezione dei tuoi sogni preferiti o selezionati.
               </div>
               
               <div className="space-y-2">
@@ -588,6 +780,28 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
               </div>
               
               <div className="space-y-2 mt-4">
+                <h4 className="text-sm font-medium">Formato di esportazione:</h4>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Button 
+                    variant={exportFormat === 'pdf' ? 'default' : 'outline'} 
+                    className="flex-1"
+                    onClick={() => setExportFormat('pdf')}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    PDF
+                  </Button>
+                  <Button 
+                    variant={exportFormat === 'epub' ? 'default' : 'outline'} 
+                    className="flex-1"
+                    onClick={() => setExportFormat('epub')}
+                  >
+                    <Book className="h-4 w-4 mr-2" />
+                    EPUB
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2 mt-4">
                 <h4 className="text-sm font-medium">Opzioni di formattazione:</h4>
                 
                 <div className="space-y-2 grid grid-cols-2">
@@ -630,7 +844,7 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
               </div>
               
               <Button 
-                onClick={exportDreamCollectionToPdf} 
+                onClick={exportDreamCollection} 
                 disabled={exporting || (allDreams.length === 0 && selectedDreamIds.length === 0 && !onlyFavorites)}
                 className="w-full"
               >
@@ -639,7 +853,7 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
                 ) : (
                   <>
                     <BookOpen className="mr-2 h-4 w-4" />
-                    Crea eBook PDF
+                    Crea eBook {exportFormat.toUpperCase()}
                   </>
                 )}
               </Button>

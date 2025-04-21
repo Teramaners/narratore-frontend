@@ -518,7 +518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Genera l'EPUB
       new Epub(options, filePath).promise.then(() => {
         // Invia il file come risposta
-        res.download(filePath, fileName, (err) => {
+        res.download(filePath, fileName, (err: Error | null) => {
           if (err) {
             console.error("Errore nell'invio dell'ebook:", err);
           }
@@ -534,18 +534,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }, 60000); // Rimuovi il file dopo 1 minuto
         });
-      }).catch(err => {
+      }).catch((err: Error) => {
         console.error("Errore nella generazione dell'ebook:", err);
         return res.status(500).json({ 
           error: "Si è verificato un errore nella generazione dell'ebook", 
           details: err.message 
         });
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Errore nell'endpoint di generazione ebook:", error);
       return res.status(500).json({ 
         error: "Si è verificato un errore nella generazione dell'ebook", 
-        details: error.message 
+        details: errorMessage 
       });
     }
   });
