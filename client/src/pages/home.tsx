@@ -7,6 +7,7 @@ import { StoryDisplay } from '@/components/story-display';
 import { DreamCategory } from '@/components/dream-category';
 import { DreamSoundtrack } from '@/components/dream-soundtrack';
 import { DreamShareEnhanced } from '@/components/dream-share-enhanced';
+import { DreamPdfExporter } from '@/components/dream-pdf-exporter';
 import { DreamTimeline } from '@/components/dream-timeline';
 import { DreamEmojiTranslator } from '@/components/dream-emoji-translator';
 import { DreamImageGenerator } from '@/components/dream-image-generator';
@@ -570,6 +571,23 @@ export default function Home() {
                     category={categoria}
                     emotion={emozione}
                     dreamImageUrl={dreamImageUrl}
+                  />
+                  
+                  <DreamPdfExporter
+                    currentDream={{
+                      id: sogniSalvati.find(
+                        (d: any) => (d.content === sogno && d.story === racconto) || 
+                                    (d.testo === sogno && d.racconto === racconto)
+                      )?.id || 0,
+                      content: sogno,
+                      story: racconto,
+                      category: categoria,
+                      emotion: emozione,
+                      isFavorite: preferito,
+                      dreamImageUrl: dreamImageUrl,
+                      emojiTranslation: emojiTranslation
+                    }}
+                    allDreams={sogniSalvati}
                   />
                 </div>
               </>
