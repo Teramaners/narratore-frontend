@@ -323,58 +323,137 @@ export async function generateImageFromDream(
   artStyle: string = "surrealista"
 ): Promise<ImageResponse> {
   try {
-    // Utilizziamo il modello gemini-1.5-pro-latest per generare la descrizione dell'immagine
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
-    
-    // Troviamo lo stile artistico richiesto o usiamo surrealista come default
-    const selectedStyle = artStyles.find(style => style.name === artStyle) || artStyles[0];
-    
-    // Prima creiamo una descrizione dettagliata per l'immagine basata sul sogno
-    const imagePrompt = `
-      Crea una descrizione dettagliata per un'immagine artistica che rappresenti questo sogno:
-      "${dream}"
-      
-      Il racconto generato da questo sogno è:
-      "${story.slice(0, 300)}..."
-      
-      La descrizione deve essere molto dettagliata, specifica e visiva, ${selectedStyle.promptModifier}.
-      
-      Concentrati su:
-      - Scena principale e personaggi/elementi chiave
-      - Palette di colori e atmosfera
-      - Elementi simbolici che rappresentano le emozioni o i temi del sogno
-      - Illuminazione e composizione
-      - Elementi surreali, metaforici o simbolici che catturano l'essenza onirica
-      
-      La descrizione deve essere in italiano e lunga circa 150-200 parole.
-    `;
-    
-    const descriptionResult = await model.generateContent(imagePrompt);
-    const imageDescription = descriptionResult.response.text().trim();
-    
-    // Ora generiamo l'SVG con il nostro generatore potenziato
-    const svgImage = generateSvgImageForDream(dream, imageDescription, artStyle);
-    
-    // Creiamo un ID univoco per l'immagine
-    const imageId = uuidv4();
-    const imageUrl = `/api/dream-images/${imageId}.svg`;
-    
-    // Salviamo l'SVG in una directory pubblica
-    const imagesDir = path.resolve('./public/dream-images');
-    if (!fs.existsSync(imagesDir)) {
-      fs.mkdirSync(imagesDir, { recursive: true });
+    // Verifica disponibilità API key
+    if (!process.env.GEMINI_API_KEY) {
+      console.log('GEMINI_API_KEY non trovata, utilizzo sistema di fallback per la generazione dell\'immagine');
+      return generateFallbackImage(dream, story, artStyle);
     }
-    
-    fs.writeFileSync(path.join(imagesDir, `${imageId}.svg`), svgImage);
-    
-    return { 
-      imageUrl,
-      description: imageDescription // Restituiamo anche la descrizione per eventuali utilizzi sul frontend
-    };
+
+    try {
+      // Utilizziamo il modello gemini-1.5-pro-latest per generare la descrizione dell'immagine
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+      
+      // Troviamo lo stile artistico richiesto o usiamo surrealista come default
+      const selectedStyle = artStyles.find(style => style.name === artStyle) || artStyles[0];
+      
+      // Prima creiamo una descrizione dettagliata per l'immagine basata sul sogno
+      const imagePrompt = `
+        Crea una descrizione dettagliata per un'immagine artistica che rappresenti questo sogno:
+        "${dream}"
+        
+        Il racconto generato da questo sogno è:
+        "${story.slice(0, 300)}..."
+        
+        La descrizione deve essere molto dettagliata, specifica e visiva, ${selectedStyle.promptModifier}.
+        
+        Concentrati su:
+        - Scena principale e personaggi/elementi chiave
+        - Palette di colori e atmosfera
+        - Elementi simbolici che rappresentano le emozioni o i temi del sogno
+        - Illuminazione e composizione
+        - Elementi surreali, metaforici o simbolici che catturano l'essenza onirica
+        
+        La descrizione deve essere in italiano e lunga circa 150-200 parole.
+      `;
+      
+      const descriptionResult = await model.generateContent(imagePrompt);
+      const imageDescription = descriptionResult.response.text().trim();
+      
+      // Ora generiamo l'SVG con il nostro generatore
+      return saveImageAndReturnResponse(dream, imageDescription, artStyle);
+    } catch (apiError) {
+      // Se l'API fallisce (es. quota superata), utilizza il sistema di fallback
+      console.log('API Gemini non disponibile, utilizzo sistema di fallback per la generazione dell\'immagine:', apiError);
+      return generateFallbackImage(dream, story, artStyle);
+    }
   } catch (error: any) {
-    console.error("Error generating image from dream:", error);
-    throw new Error(`Failed to generate image: ${error.message}`);
+    console.error("Errore nella generazione dell'immagine:", error);
+    // In caso di qualsiasi errore, utilizza comunque il fallback
+    return generateFallbackImage(dream, story, artStyle);
   }
+}
+
+// Funzione per generare un'immagine di fallback quando l'API non è disponibile
+function generateFallbackImage(dream: string, story: string, artStyle: string = "surrealista"): Promise<ImageResponse> {
+  // Nel fallback, proviamo ad estrarre concetti chiave dal sogno stesso
+  const keywords = extractKeywords(dream + " " + story.slice(0, 300));
+  
+  // Creiamo una descrizione di fallback basata sulle parole chiave
+  let fallbackDescription = `Un'immagine onirica che rappresenta ${keywords.slice(0, 3).join(", ")}.`;
+  
+  if (keywords.length > 3) {
+    fallbackDescription += ` Contiene elementi di ${keywords.slice(3, 6).join(", ")}.`;
+  }
+  
+  // Aggiungiamo informazioni sullo stile
+  const selectedStyle = artStyles.find(style => style.name === artStyle) || artStyles[0];
+  fallbackDescription += ` L'immagine è ${selectedStyle.promptModifier}.`;
+  
+  // Usiamo il generatore SVG con la descrizione di fallback
+  return Promise.resolve(saveImageAndReturnResponse(dream, fallbackDescription, artStyle));
+}
+
+// Funzione per estrarre parole chiave da un testo
+function extractKeywords(text: string): string[] {
+  // Lista di parole comuni da escludere
+  const stopWords = [
+    "il", "la", "i", "le", "un", "uno", "una", "e", "o", "ma", "perché", "se", "anche", "non",
+    "che", "di", "a", "da", "in", "con", "su", "per", "tra", "fra", "ho", "hai", "ha", "abbiamo",
+    "avete", "hanno", "sono", "sei", "è", "siamo", "siete", "nel", "nella", "nei", "nelle", "dello",
+    "della", "degli", "delle", "questo", "questa", "questi", "queste", "quello", "quella", "quelli",
+    "quelle", "come", "dove", "quando", "mi", "ti", "si", "ci", "vi", "loro", "mio", "tuo", "suo",
+    "nostro", "vostro"
+  ];
+  
+  // Normalizza il testo
+  const normalizedText = text.toLowerCase()
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
+    .replace(/\s{2,}/g, " ");
+  
+  // Dividi in parole
+  const words = normalizedText.split(" ");
+  
+  // Filtra parole significative (più lunghe di 3 caratteri e non nella lista di stop)
+  const significantWords = words.filter(
+    word => word.length > 3 && !stopWords.includes(word)
+  );
+  
+  // Conta frequenza delle parole
+  const wordFreq: Record<string, number> = {};
+  significantWords.forEach(word => {
+    wordFreq[word] = (wordFreq[word] || 0) + 1;
+  });
+  
+  // Ordina per frequenza e prendi le top 10
+  const sortedWords = Object.entries(wordFreq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(entry => entry[0]);
+  
+  return sortedWords;
+}
+
+// Funzione per salvare l'immagine e restituire la risposta
+function saveImageAndReturnResponse(dream: string, imageDescription: string, artStyle: string): ImageResponse {
+  // Generiamo l'SVG
+  const svgImage = generateSvgImageForDream(dream, imageDescription, artStyle);
+  
+  // Creiamo un ID univoco per l'immagine
+  const imageId = uuidv4();
+  const imageUrl = `/api/dream-images/${imageId}.svg`;
+  
+  // Salviamo l'SVG in una directory pubblica
+  const imagesDir = path.resolve('./public/dream-images');
+  if (!fs.existsSync(imagesDir)) {
+    fs.mkdirSync(imagesDir, { recursive: true });
+  }
+  
+  fs.writeFileSync(path.join(imagesDir, `${imageId}.svg`), svgImage);
+  
+  return { 
+    imageUrl,
+    description: imageDescription
+  };
 }
 
 // Funzione completamente riscritta per generare SVG artistico basato sul sogno
@@ -1005,13 +1084,21 @@ function generateSvgImageForDream(dream: string, description: string, artStyle: 
     }
   };
   
-  // Determine which style to use
-  if (!artStyles.find(style => style.name === artStyle)) {
-    artStyle = "surrealista"; // Default to surrealist if style not found
+  // Determine which style to use and apply it
+  if (artStyle === "surrealista") {
+    styleGenerator.surrealista();
+  } else if (artStyle === "impressionista") {
+    styleGenerator.impressionista();
+  } else if (artStyle === "fantasy") {
+    styleGenerator.fantasy();
+  } else if (artStyle === "noir") {
+    styleGenerator.noir();
+  } else if (artStyle === "minimalista") {
+    styleGenerator.minimalista();
+  } else {
+    // Default to surrealist if style not found
+    styleGenerator.surrealista();
   }
-  
-  // Generate the style
-  styleGenerator[artStyle]();
   
   // Compose the final SVG
   return `
