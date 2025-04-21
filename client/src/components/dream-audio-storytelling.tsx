@@ -38,35 +38,43 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
   
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const synth = window.speechSynthesis;
-  const ambiencePlayerRef = useRef<Tone.Player | null>(null);
+  
+  // Tipo personalizzato per i suoni ambientali
+  type AmbientSound = {
+    synth: any;
+    loop?: any;
+    cleanup: () => void;
+  };
+  
+  const ambiencePlayerRef = useRef<AmbientSound | null>(null);
   const currentPositionRef = useRef<number>(0);
   const totalLengthRef = useRef<number>(0);
   const intervalRef = useRef<number | null>(null);
   
-  // Liste di effetti sonori ambientali per diverse emozioni
+  // Liste di effetti sonori ambientali per diverse emozioni (con URL locali che funzionano tramite sintesi tono.js)
   const ambienceSounds = {
     default: {
-      url: 'https://freesound.org/data/previews/419/419507_7252851-lq.mp3', // Suono ambientale neutro
+      url: 'default',
       description: 'Ambiente generico'
     },
     avventura: {
-      url: 'https://freesound.org/data/previews/456/456385_9498599-lq.mp3', // Foresta avventurosa
+      url: 'adventure',
       description: 'Ambiente avventuroso'
     },
     spaventoso: {
-      url: 'https://freesound.org/data/previews/368/368403_5503256-lq.mp3', // Atmosfera inquietante
+      url: 'spooky',
       description: 'Atmosfera inquietante'
     },
     romantico: {
-      url: 'https://freesound.org/data/previews/530/530038_7210101-lq.mp3', // Pianoforte romantico
+      url: 'romantic',
       description: 'Musica romantica'
     },
     surreale: {
-      url: 'https://freesound.org/data/previews/451/451591_7572453-lq.mp3', // Suoni eterei
+      url: 'surreal',
       description: 'Ambiente surreale'
     },
     tranquillo: {
-      url: 'https://freesound.org/data/previews/451/451517_6142149-lq.mp3', // Onde del mare calme
+      url: 'calm',
       description: 'Onde del mare'
     },
   };
@@ -138,8 +146,9 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
     return () => {
       stopPlayback();
       if (ambiencePlayerRef.current) {
-        ambiencePlayerRef.current.stop();
-        ambiencePlayerRef.current.dispose();
+        if (ambiencePlayerRef.current.cleanup) {
+          ambiencePlayerRef.current.cleanup();
+        }
       }
     };
   }, [emotion]);
@@ -277,13 +286,13 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
     if (synth.speaking) {
       if (synth.paused) {
         synth.resume();
-        if (ambiencePlayerRef.current) {
-          ambiencePlayerRef.current.volume.rampTo(ambienceVolume, 0.5);
+        if (ambiencePlayerRef.current && ambiencePlayerRef.current.synth && ambiencePlayerRef.current.synth.volume) {
+          ambiencePlayerRef.current.synth.volume.rampTo(ambienceVolume * -10, 0.5);
         }
       } else {
         synth.pause();
-        if (ambiencePlayerRef.current) {
-          ambiencePlayerRef.current.volume.rampTo(0, 0.5);
+        if (ambiencePlayerRef.current && ambiencePlayerRef.current.synth && ambiencePlayerRef.current.synth.volume) {
+          ambiencePlayerRef.current.synth.volume.rampTo(-Infinity, 0.5);
         }
       }
     } else {
@@ -305,29 +314,244 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
     currentPositionRef.current = 0;
   };
   
-  // Funzione per avviare l'audio ambientale
+  // Funzione per avviare l'audio ambientale usando suoni generati con Tone.js
   const playAmbience = async () => {
     try {
       if (ambiencePlayerRef.current) {
-        ambiencePlayerRef.current.stop();
-        ambiencePlayerRef.current.dispose();
+        if (ambiencePlayerRef.current.cleanup) {
+          ambiencePlayerRef.current.cleanup();
+        }
       }
       
-      // Ottieni l'URL del suono in base al tipo di ambiente
-      const soundUrl = ambienceSounds[ambienceType as keyof typeof ambienceSounds]?.url || ambienceSounds.default.url;
+      // Invece di caricare un file, generiamo l'ambiente sonoro in base al tipo
+      const soundType = ambienceSounds[ambienceType as keyof typeof ambienceSounds]?.url || 'default';
       
-      // Imposta il nuovo player con l'audio ambientale
-      const player = new Tone.Player({
-        url: soundUrl,
-        loop: true,
-        volume: -Infinity, // Inizia silenzioso per il fade in
-        onload: () => {
-          player.start();
-          player.volume.rampTo(ambienceVolume, 2); // Fade in in 2 secondi
-        }
-      }).toDestination();
+      // Crea un synth diverso in base al tipo di ambiente
+      let ambientSound;
       
-      ambiencePlayerRef.current = player;
+      switch (soundType) {
+        case 'default':
+          // Suono ambientale generico con note casuali e riverbero
+          const synth = new Tone.PolySynth().toDestination();
+          const reverb = new Tone.Reverb(5).toDestination();
+          synth.connect(reverb);
+          
+          // Imposta volume iniziale a zero per fade in
+          synth.volume.value = -Infinity;
+          
+          // Crea un loop che suona note casuali
+          const loop = new Tone.Loop(time => {
+            synth.triggerAttackRelease(
+              ["C4", "E4", "G4", "B4"][Math.floor(Math.random() * 4)],
+              "8n",
+              time,
+              0.1
+            );
+          }, "4n");
+          
+          // Avvia il loop
+          loop.start(0);
+          
+          // Fade in
+          synth.volume.rampTo(ambienceVolume * -10, 2);
+          
+          ambientSound = { synth, loop, cleanup: () => {
+            loop.stop();
+            synth.dispose();
+            reverb.dispose();
+          }};
+          break;
+          
+        case 'adventure':
+          // Suono avventuroso con ritmo più veloce e note più dinamiche
+          const adventureSynth = new Tone.PolySynth().toDestination();
+          const adventureReverb = new Tone.Reverb(3).toDestination();
+          adventureSynth.connect(adventureReverb);
+          
+          // Imposta volume iniziale a zero per fade in
+          adventureSynth.volume.value = -Infinity;
+          
+          // Crea un pattern ritmico più energico
+          const adventureLoop = new Tone.Sequence((time, note) => {
+            adventureSynth.triggerAttackRelease(note, "16n", time, 0.2);
+          }, ["G3", "D4", "G4", "A4", "B4", "D5", "G4", "A4"], "8n");
+          
+          // Avvia il pattern
+          adventureLoop.start(0);
+          
+          // Fade in
+          adventureSynth.volume.rampTo(ambienceVolume * -8, 2);
+          
+          ambientSound = { synth: adventureSynth, loop: adventureLoop, cleanup: () => {
+            adventureLoop.stop();
+            adventureSynth.dispose();
+            adventureReverb.dispose();
+          }};
+          break;
+          
+        case 'spooky':
+          // Suono inquietante con dissonanze e basse frequenze
+          const spookySynth = new Tone.PolySynth().toDestination();
+          const spookyReverb = new Tone.Reverb(6).toDestination();
+          const spookyDelay = new Tone.FeedbackDelay("8n", 0.5).toDestination();
+          spookySynth.connect(spookyReverb);
+          spookySynth.connect(spookyDelay);
+          
+          // Imposta volume iniziale a zero per fade in
+          spookySynth.volume.value = -Infinity;
+          
+          // Crea un pattern inquietante
+          const spookyLoop = new Tone.Loop(time => {
+            const note = ["C2", "Eb2", "Gb2", "A2", "B2"][Math.floor(Math.random() * 5)];
+            spookySynth.triggerAttackRelease(note, "2n", time, 0.1);
+          }, "2n");
+          
+          // Avvia il pattern
+          spookyLoop.start(0);
+          
+          // Fade in
+          spookySynth.volume.rampTo(ambienceVolume * -12, 3);
+          
+          ambientSound = { synth: spookySynth, loop: spookyLoop, cleanup: () => {
+            spookyLoop.stop();
+            spookySynth.dispose();
+            spookyReverb.dispose();
+            spookyDelay.dispose();
+          }};
+          break;
+          
+        case 'romantic':
+          // Suono romantico con accordi dolci e armonizzati
+          const romanticSynth = new Tone.PolySynth().toDestination();
+          const romanticReverb = new Tone.Reverb(4).toDestination();
+          romanticSynth.connect(romanticReverb);
+          
+          // Imposta volume iniziale a zero per fade in
+          romanticSynth.volume.value = -Infinity;
+          
+          // Sequenza di accordi romantici
+          const chords = [
+            ["E3", "G3", "B3", "E4"],
+            ["A3", "C4", "E4", "A4"],
+            ["D3", "F#3", "A3", "D4"],
+            ["G3", "B3", "D4", "G4"],
+          ];
+          
+          const romanticLoop = new Tone.Sequence((time, chord) => {
+            romanticSynth.triggerAttackRelease(chord, "2n", time, 0.1);
+          }, chords, "2n");
+          
+          // Avvia la sequenza
+          romanticLoop.start(0);
+          
+          // Fade in
+          romanticSynth.volume.rampTo(ambienceVolume * -8, 2);
+          
+          ambientSound = { synth: romanticSynth, loop: romanticLoop, cleanup: () => {
+            romanticLoop.stop();
+            romanticSynth.dispose();
+            romanticReverb.dispose();
+          }};
+          break;
+          
+        case 'surreal':
+          // Suono surreale con effetti strani e note dissonanti
+          const surrealSynth = new Tone.PolySynth().toDestination();
+          const surrealReverb = new Tone.Reverb(8).toDestination();
+          const surrealDelay = new Tone.PingPongDelay("16n", 0.8).toDestination();
+          const surrealFilter = new Tone.AutoFilter(0.1).start().toDestination();
+          
+          surrealSynth.connect(surrealReverb);
+          surrealSynth.connect(surrealDelay);
+          surrealSynth.connect(surrealFilter);
+          
+          // Imposta volume iniziale a zero per fade in
+          surrealSynth.volume.value = -Infinity;
+          
+          // Note strane e tempi irregolari
+          const surrealLoop = new Tone.Loop(time => {
+            const offset = Math.random() * 0.5;
+            const note = ["D#4", "G#3", "A#5", "C2", "F#6"][Math.floor(Math.random() * 5)];
+            surrealSynth.triggerAttackRelease(note, "4n", time + offset, 0.1);
+          }, "3n");
+          
+          // Avvia il loop
+          surrealLoop.start(0);
+          
+          // Fade in
+          surrealSynth.volume.rampTo(ambienceVolume * -15, 4);
+          
+          ambientSound = { synth: surrealSynth, loop: surrealLoop, cleanup: () => {
+            surrealLoop.stop();
+            surrealSynth.dispose();
+            surrealReverb.dispose();
+            surrealDelay.dispose();
+            surrealFilter.dispose();
+          }};
+          break;
+          
+        case 'calm':
+          // Suono calmo con onde oceaniche
+          const calmSynth = new Tone.Noise("pink").start();
+          const calmFilter = new Tone.Filter({
+            type: "lowpass",
+            frequency: 500,
+            Q: 1
+          }).toDestination();
+          
+          const calmLFO = new Tone.LFO({
+            frequency: 0.1,
+            min: 300,
+            max: 800
+          }).connect(calmFilter.frequency);
+          
+          calmSynth.connect(calmFilter);
+          calmLFO.start();
+          
+          // Imposta volume iniziale a zero per fade in
+          calmSynth.volume.value = -Infinity;
+          
+          // Fade in
+          calmSynth.volume.rampTo(ambienceVolume * -25, 3);
+          
+          ambientSound = { synth: calmSynth, cleanup: () => {
+            calmSynth.stop();
+            calmSynth.dispose();
+            calmFilter.dispose();
+            calmLFO.dispose();
+          }};
+          break;
+          
+        default:
+          // Fallback a default
+          const defaultSynth = new Tone.PolySynth().toDestination();
+          const defaultReverb = new Tone.Reverb(3).toDestination();
+          defaultSynth.connect(defaultReverb);
+          
+          // Imposta volume iniziale a zero per fade in
+          defaultSynth.volume.value = -Infinity;
+          
+          // Crea un loop semplice
+          const defaultLoop = new Tone.Loop(time => {
+            defaultSynth.triggerAttackRelease("C4", "8n", time);
+          }, "4n");
+          
+          // Avvia il loop
+          defaultLoop.start(0);
+          
+          // Fade in
+          defaultSynth.volume.rampTo(ambienceVolume * -12, 2);
+          
+          ambientSound = { synth: defaultSynth, loop: defaultLoop, cleanup: () => {
+            defaultLoop.stop();
+            defaultSynth.dispose();
+            defaultReverb.dispose();
+          }};
+      }
+      
+      // Memorizza l'ambiente sonoro per poterlo fermare in seguito
+      ambiencePlayerRef.current = ambientSound;
+      
     } catch (error) {
       console.error('Errore nell\'avvio dell\'audio ambientale:', error);
     }
@@ -337,16 +561,30 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
   const stopAmbience = (withFade = false) => {
     if (ambiencePlayerRef.current) {
       if (withFade) {
-        // Fade out e poi stop
-        ambiencePlayerRef.current.volume.rampTo(-Infinity, 2);
-        setTimeout(() => {
-          if (ambiencePlayerRef.current) {
-            ambiencePlayerRef.current.stop();
+        // Fade out graduale
+        if (ambiencePlayerRef.current.synth && ambiencePlayerRef.current.synth.volume) {
+          ambiencePlayerRef.current.synth.volume.rampTo(-Infinity, 2);
+          
+          // Pulizia dopo il fade out
+          setTimeout(() => {
+            if (ambiencePlayerRef.current && ambiencePlayerRef.current.cleanup) {
+              ambiencePlayerRef.current.cleanup();
+              ambiencePlayerRef.current = null;
+            }
+          }, 2000);
+        } else {
+          // Fallback per altri tipi di oggetti Tone.js
+          if (ambiencePlayerRef.current.cleanup) {
+            ambiencePlayerRef.current.cleanup();
+            ambiencePlayerRef.current = null;
           }
-        }, 2000);
+        }
       } else {
         // Stop immediato
-        ambiencePlayerRef.current.stop();
+        if (ambiencePlayerRef.current.cleanup) {
+          ambiencePlayerRef.current.cleanup();
+          ambiencePlayerRef.current = null;
+        }
       }
     }
   };
@@ -364,8 +602,11 @@ export function DreamAudioStorytelling({ dreamStory, emotion }: DreamAudioStoryt
   // Funzione per cambiare il volume dell'ambiente
   const changeAmbienceVolume = (value: number) => {
     setAmbienceVolume(value);
-    if (ambiencePlayerRef.current) {
-      ambiencePlayerRef.current.volume.rampTo(value, 0.1);
+    if (ambiencePlayerRef.current && ambiencePlayerRef.current.synth && ambiencePlayerRef.current.synth.volume) {
+      // Applica un fattore di scala per mantenere il volume in un intervallo ragionevole
+      // Valori più bassi (più negativi) sono più silenziosi in Tone.js
+      const scaledVolume = value * -20; // Scale da 0-1 a 0 a -20
+      ambiencePlayerRef.current.synth.volume.rampTo(scaledVolume, 0.1);
     }
   };
   
