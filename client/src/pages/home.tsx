@@ -8,6 +8,7 @@ import { DreamCategory } from '@/components/dream-category';
 import { DreamSoundtrack } from '@/components/dream-soundtrack';
 import { DreamShareEnhanced } from '@/components/dream-share-enhanced';
 import { DreamPdfExporter } from '@/components/dream-pdf-exporter';
+import { DreamAudioStorytelling } from '@/components/dream-audio-storytelling';
 import { DreamTimeline } from '@/components/dream-timeline';
 import { DreamEmojiTranslator } from '@/components/dream-emoji-translator';
 import { DreamImageGenerator } from '@/components/dream-image-generator';
@@ -546,6 +547,14 @@ export default function Home() {
                   
                   <div className="mt-4">
                     <DreamASMRGenerator
+                      dreamContent={sogno}
+                      dreamStory={racconto}
+                      emotion={emozione}
+                    />
+                  </div>
+                  
+                  <div className="mt-4">
+                    <DreamAudioStorytelling
                       dreamContent={sogno}
                       dreamStory={racconto}
                       emotion={emozione}
