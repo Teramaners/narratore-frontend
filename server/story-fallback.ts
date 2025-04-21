@@ -89,14 +89,54 @@ Forse, riflettei, i sogni più profondi non sono semplici fantasie o elaborazion
   }
 ];
 
+interface StoryGenerationOptions {
+  style?: string;  // ID dello stile letterario
+  length?: 'breve' | 'medio' | 'lungo';  // Lunghezza del racconto
+  tone?: string;  // Tono del racconto
+  includeTitle?: boolean;  // Se separare il titolo dal contenuto
+}
+
+// Mapping degli stili ai template
+const styleToTemplateIndex = {
+  'surrealista': [0, 1], // indici dei template più adatti a questo stile
+  'avventura': [2, 4],
+  'romantico': [3, 0],
+  'thriller': [4, 2],
+  'fantasy': [1, 3]
+};
+
 // Genera un racconto fallback dal sogno
-export function generateFallbackStory(dream: string): { story: string } {
-  // Sceglie un template casuale
-  const randomIndex = Math.floor(Math.random() * storyTemplates.length);
-  const template = storyTemplates[randomIndex];
+export function generateFallbackStory(
+  dream: string, 
+  options: StoryGenerationOptions = {}
+): { story: string; title?: string } {
+  // Estrai le opzioni (o usa i default)
+  const style = options.style || 'surrealista';
+  const includeTitle = options.includeTitle !== undefined ? options.includeTitle : true;
+  
+  // Sceglie un template appropriato in base allo stile
+  let templateIndices = styleToTemplateIndex[style as keyof typeof styleToTemplateIndex];
+  if (!templateIndices) {
+    // Se lo stile non è riconosciuto, usa un template casuale
+    templateIndices = [Math.floor(Math.random() * storyTemplates.length)];
+  }
+  
+  // Prendi il primo template dell'array per lo stile selezionato
+  const templateIndex = templateIndices[0];
+  const template = storyTemplates[templateIndex];
   
   // Genera la storia usando il template
-  const story = template.template(dream);
+  const storyText = template.template(dream);
   
-  return { story };
+  // Se è richiesto di separare il titolo, restituiscilo separatamente
+  if (includeTitle) {
+    const titleEndIndex = storyText.indexOf('\n\n');
+    if (titleEndIndex > 0) {
+      const title = storyText.substring(0, titleEndIndex).trim();
+      const story = storyText.substring(titleEndIndex + 2).trim();
+      return { story, title };
+    }
+  }
+  
+  return { story: storyText };
 }

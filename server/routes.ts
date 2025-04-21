@@ -45,16 +45,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint per la generazione di racconti dai sogni
   app.post("/api/genera-racconto", async (req, res) => {
     try {
-      const { sogno } = req.body;
+      const { 
+        sogno, 
+        stile, 
+        lunghezza, 
+        tono, 
+        includiTitolo 
+      } = req.body;
       
       if (!sogno || typeof sogno !== "string" || sogno.trim() === "") {
         return res.status(400).json({ error: "Il contenuto del sogno è richiesto" });
       }
 
-      const result = await generateStoryFromDream(sogno);
+      // Opzioni di generazione
+      const options = {
+        style: stile,
+        length: lunghezza,
+        tone: tono,
+        includeTitle: includiTitolo
+      };
+
+      const result = await generateStoryFromDream(sogno, options);
       
-      // Restituisce il racconto generato
-      return res.status(200).json({ racconto: result.story });
+      // Restituisce il racconto generato, includendo il titolo se disponibile
+      return res.status(200).json({ 
+        racconto: result.story,
+        titolo: result.title
+      });
     } catch (error: any) {
       console.error("Error generating story:", error);
       return res.status(500).json({ 
@@ -123,6 +140,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint per ottenere gli stili artistici disponibili
   app.get("/api/stili-artistici", (req, res) => {
     return res.status(200).json(artStyles);
+  });
+  
+  // Endpoint per ottenere gli stili letterari disponibili
+  app.get("/api/stili-letterari", (req, res) => {
+    return res.status(200).json(literaryStyles);
   });
   
   // Serviamo la cartella delle immagini generate
