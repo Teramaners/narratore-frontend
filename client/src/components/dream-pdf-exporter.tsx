@@ -478,53 +478,62 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
         sogni: sortedDreams.map(dream => prepareDreamData(dream)),
         titolo: collectionTitle,
         autore: authorName,
-        copertina: null, // Per ora non supportiamo una copertina personalizzata
       };
       
-      // Fai una richiesta al backend per generare l'ebook
-      const response = await fetch('/api/genera-ebook', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      });
+      // Apri una nuova finestra con il documento HTML
+      const newWindow = window.open('', '_blank');
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Errore nella generazione dell\'ebook');
+      if (!newWindow) {
+        throw new Error('Il browser ha bloccato l\'apertura della nuova finestra. Controlla le impostazioni del browser.');
       }
       
-      // Scarica il file EPUB
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      // Crea un form temporaneo per inviare i dati
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/api/genera-ebook';
+      form.target = newWindow.name;
       
-      // Crea un link per il download e clicca automaticamente
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${collectionTitle.replace(/\s+/g, '-')}.epub`;
-      document.body.appendChild(a);
-      a.click();
+      // Aggiungi i dati come input nascosto
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'sogni';
+      input.value = JSON.stringify(requestData.sogni);
+      form.appendChild(input);
       
-      // Pulisci
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const inputTitolo = document.createElement('input');
+      inputTitolo.type = 'hidden';
+      inputTitolo.name = 'titolo';
+      inputTitolo.value = requestData.titolo;
+      form.appendChild(inputTitolo);
+      
+      const inputAutore = document.createElement('input');
+      inputAutore.type = 'hidden';
+      inputAutore.name = 'autore';
+      inputAutore.value = requestData.autore || '';
+      form.appendChild(inputAutore);
+      
+      // Aggiungi il form al documento e invialo
+      document.body.appendChild(form);
+      form.submit();
+      
+      // Rimuovi il form
+      document.body.removeChild(form);
       
       toast({
-        description: `Ebook EPUB con ${dreamsToExport.length} sogni esportato con successo!`,
+        description: `Ebook HTML con ${dreamsToExport.length} sogni generato con successo!`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Errore durante l\'esportazione dell\'ebook:', error);
       toast({
         variant: "destructive",
-        description: "Errore durante l'esportazione dell'ebook. Riprova.",
+        description: error.message || "Errore durante l'esportazione dell'ebook. Riprova.",
       });
     } finally {
       setExporting(false);
     }
   };
   
-  // Funzione per esportare un singolo sogno in formato EPUB
+  // Funzione per esportare un singolo sogno in formato HTML
   const exportSingleDreamToEpub = async () => {
     if (!currentDream) {
       toast({
@@ -543,46 +552,55 @@ export function DreamPdfExporter({ currentDream, allDreams }: DreamPdfExporterPr
         sogni: [dream],
         titolo: `Sogno: ${dream.content.substring(0, 30)}${dream.content.length > 30 ? '...' : ''}`,
         autore: authorName || "Narratore di Sogni",
-        copertina: null,
       };
       
-      // Fai una richiesta al backend per generare l'ebook
-      const response = await fetch('/api/genera-ebook', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      });
+      // Apri una nuova finestra con il documento HTML
+      const newWindow = window.open('', '_blank');
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Errore nella generazione dell\'ebook');
+      if (!newWindow) {
+        throw new Error('Il browser ha bloccato l\'apertura della nuova finestra. Controlla le impostazioni del browser.');
       }
       
-      // Scarica il file EPUB
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      // Crea un form temporaneo per inviare i dati
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/api/genera-ebook';
+      form.target = newWindow.name;
       
-      // Crea un link per il download e clicca automaticamente
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Sogno-${dream.id}.epub`;
-      document.body.appendChild(a);
-      a.click();
+      // Aggiungi i dati come input nascosto
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'sogni';
+      input.value = JSON.stringify(requestData.sogni);
+      form.appendChild(input);
       
-      // Pulisci
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const inputTitolo = document.createElement('input');
+      inputTitolo.type = 'hidden';
+      inputTitolo.name = 'titolo';
+      inputTitolo.value = requestData.titolo;
+      form.appendChild(inputTitolo);
+      
+      const inputAutore = document.createElement('input');
+      inputAutore.type = 'hidden';
+      inputAutore.name = 'autore';
+      inputAutore.value = requestData.autore || '';
+      form.appendChild(inputAutore);
+      
+      // Aggiungi il form al documento e invialo
+      document.body.appendChild(form);
+      form.submit();
+      
+      // Rimuovi il form
+      document.body.removeChild(form);
       
       toast({
-        description: "Ebook EPUB del sogno esportato con successo!",
+        description: "Ebook HTML del sogno generato con successo!",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Errore durante l\'esportazione dell\'ebook:', error);
       toast({
         variant: "destructive",
-        description: "Errore durante l'esportazione dell'ebook. Riprova.",
+        description: error.message || "Errore durante l'esportazione dell'ebook. Riprova.",
       });
     } finally {
       setExporting(false);

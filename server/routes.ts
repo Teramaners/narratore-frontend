@@ -438,7 +438,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint per la generazione di ebook dai sogni
   app.post("/api/genera-ebook", async (req, res) => {
     try {
-      const { sogni, titolo, autore } = req.body;
+      // Gestisce sia i dati JSON che i dati form
+      let sogni, titolo, autore;
+      
+      if (req.is('application/json')) {
+        // Richiesta JSON normale
+        ({ sogni, titolo, autore } = req.body);
+      } else {
+        // Richiesta da form
+        try {
+          sogni = JSON.parse(req.body.sogni || '[]');
+          titolo = req.body.titolo;
+          autore = req.body.autore;
+        } catch (parseError) {
+          console.error("Errore nel parsing dei dati del form:", parseError);
+          return res.status(400).json({ error: "Formato dei dati non valido" });
+        }
+      }
       
       if (!sogni || !Array.isArray(sogni) || sogni.length === 0) {
         return res.status(400).json({ error: "È necessario fornire almeno un sogno" });
