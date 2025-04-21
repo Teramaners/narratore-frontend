@@ -435,6 +435,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint per la generazione di ebook dai sogni
+  app.post("/api/genera-ebook", async (req, res) => {
+    try {
+      const Epub = require('epub-gen');
+      const path = require('path');
+      const fs = require('fs');
+      const { sogni, titolo, autore, copertina } = req.body;
+      
+      if (!sogni || !Array.isArray(sogni) || sogni.length === 0) {
+        return res.status(400).json({ error: "È necessario fornire almeno un sogno" });
+      }
+      
+      // Crea directory temporanea se non esiste
+      const tempDir = path.resolve('./tmp');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      
+      // Genera un nome file unico
+      const timestamp = new Date().getTime();
+      const fileName = `dreambook_${timestamp}.epub`;
+      const filePath = path.join(tempDir, fileName);
+      
+      // Prepara i contenuti dell'ebook
+      const content = sogni.map(sogno => {
+        return {
+          title: sogno.titolo || "Sogno senza titolo",
+          data: `
+            <h2>${sogno.titolo || "Sogno senza titolo"}</h2>
+            <div style="font-style: italic; margin-bottom: 15px;">
+              <p>${sogno.content || sogno.testo || ""}</p>
+            </div>
+            <div style="margin-top: 20px;">
+              <p>${sogno.story || sogno.racconto || ""}</p>
+            </div>
+            ${sogno.emojiTranslation ? `
+              <div style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+                <h3>Traduzione Emoji</h3>
+                <p style="font-size: 24px;">${sogno.emojiTranslation}</p>
+              </div>
+            ` : ''}
+            ${sogno.categoria || sogno.category ? `
+              <p><strong>Categoria:</strong> ${sogno.categoria || sogno.category}</p>
+            ` : ''}
+            ${sogno.emozione || sogno.emotion ? `
+              <p><strong>Emozione:</strong> ${sogno.emozione || sogno.emotion}</p>
+            ` : ''}
+            ${sogno.createdAt ? `
+              <p><small>Data: ${new Date(sogno.createdAt).toLocaleDateString('it-IT')}</small></p>
+            ` : ''}
+          `
+        };
+      });
+      
+      // Crea l'ebook
+      const options = {
+        title: titolo || "Il Mio Libro dei Sogni",
+        author: autore || "Narratore di Sogni",
+        publisher: "Narratore di Sogni App",
+        cover: copertina || null,
+        content: content,
+        lang: "it",
+        tocTitle: "Indice dei Sogni",
+        customHtmlTocTemplatePath: null,
+        css: `
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.5;
+            color: #333;
+          }
+          h1, h2, h3 {
+            color: #2D3748;
+          }
+          h2 {
+            border-bottom: 1px solid #E2E8F0;
+            padding-bottom: 0.5em;
+          }
+        `
+      };
+      
+      // Genera l'EPUB
+      new Epub(options, filePath).promise.then(() => {
+        // Invia il file come risposta
+        res.download(filePath, fileName, (err) => {
+          if (err) {
+            console.error("Errore nell'invio dell'ebook:", err);
+          }
+          
+          // Pulisci i file temporanei dopo l'invio
+          setTimeout(() => {
+            try {
+              if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+              }
+            } catch (cleanupErr) {
+              console.error("Errore nella pulizia dei file temporanei:", cleanupErr);
+            }
+          }, 60000); // Rimuovi il file dopo 1 minuto
+        });
+      }).catch(err => {
+        console.error("Errore nella generazione dell'ebook:", err);
+        return res.status(500).json({ 
+          error: "Si è verificato un errore nella generazione dell'ebook", 
+          details: err.message 
+        });
+      });
+    } catch (error) {
+      console.error("Errore nell'endpoint di generazione ebook:", error);
+      return res.status(500).json({ 
+        error: "Si è verificato un errore nella generazione dell'ebook", 
+        details: error.message 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
