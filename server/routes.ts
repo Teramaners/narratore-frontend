@@ -6,7 +6,8 @@ import {
   generateEmojiTranslation, 
   generateImageFromDream, 
   analyzeEmotionsInDream,
-  artStyles 
+  artStyles,
+  literaryStyles
 } from "./gemini";
 import {
   extractDreamSymbols,

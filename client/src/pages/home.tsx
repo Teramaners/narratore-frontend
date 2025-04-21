@@ -13,6 +13,7 @@ import { DreamImageGenerator } from '@/components/dream-image-generator';
 import { DreamASMRGenerator } from '@/components/dream-asmr-generator';
 import { DreamEmotionAnalysis } from '@/components/dream-emotion-analysis';
 import { DreamSymbolDictionary } from '@/components/dream-symbol-dictionary';
+import { DreamStoryGenerator } from '@/components/dream-story-generator';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SavedDream } from '@/lib/localStorage';
@@ -298,6 +299,56 @@ export default function Home() {
               currentDream={sogno}
               setCurrentDream={setSogno}
             />
+            
+            {/* Generatore di storie AI avanzato */}
+            {sogno.trim().length > 0 && (
+              <div className="mt-4">
+                <DreamStoryGenerator
+                  dreamContent={sogno}
+                  onStoryGenerated={(story, title) => {
+                    setRacconto(story);
+                    
+                    // Gestisce la generazione delle emoji dopo la storia (stesso comportamento di inviaSogno)
+                    const generateEmojis = async () => {
+                      try {
+                        const responseEmoji = await apiRequest("POST", "/api/genera-emoji", { sogno });
+                        const dataEmoji = await responseEmoji.json();
+                        
+                        if (!dataEmoji.error && dataEmoji.emojiTranslation) {
+                          const emojiGenerata = dataEmoji.emojiTranslation;
+                          setEmojiTranslation(emojiGenerata);
+                          
+                          // Salva il sogno con tutti i dati
+                          await saveDreamMutation.mutateAsync({
+                            testo: sogno,
+                            racconto: story,
+                            categoria: categoria,
+                            emozione: emozione,
+                            preferito: preferito,
+                            emojiTranslation: emojiGenerata
+                          });
+                        }
+                      } catch (emojiError) {
+                        console.error("Errore nella generazione delle emoji:", emojiError);
+                        // Salva comunque il sogno anche senza emoji
+                        await saveDreamMutation.mutateAsync({
+                          testo: sogno,
+                          racconto: story,
+                          categoria: categoria,
+                          emozione: emozione,
+                          preferito: preferito
+                        });
+                      }
+                      
+                      // Ricarica la lista dei sogni
+                      refetchSogni();
+                    };
+                    
+                    generateEmojis();
+                  }}
+                />
+              </div>
+            )}
             
             <Tabs defaultValue="list" className="mt-4">
               <TabsList className="w-full mb-2 dark:bg-gray-800/70 light:bg-gray-100">
