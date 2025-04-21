@@ -6,7 +6,7 @@ import { DreamList } from '@/components/dream-list';
 import { StoryDisplay } from '@/components/story-display';
 import { DreamCategory } from '@/components/dream-category';
 import { DreamSoundtrack } from '@/components/dream-soundtrack';
-import { DreamShare } from '@/components/dream-share';
+import { DreamShareEnhanced } from '@/components/dream-share-enhanced';
 import { DreamTimeline } from '@/components/dream-timeline';
 import { DreamEmojiTranslator } from '@/components/dream-emoji-translator';
 import { DreamImageGenerator } from '@/components/dream-image-generator';
@@ -564,10 +564,12 @@ export default function Home() {
                     />
                   </div>
                   
-                  <DreamShare 
+                  <DreamShareEnhanced
                     dreamContent={sogno}
                     dreamStory={racconto}
                     category={categoria}
+                    emotion={emozione}
+                    dreamImageUrl={dreamImageUrl}
                   />
                 </div>
               </>
