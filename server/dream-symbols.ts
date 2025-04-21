@@ -12,15 +12,22 @@ interface DreamSymbolResponse {
   categories: string[];
 }
 
+interface SymbolPosition {
+  symbol: string;
+  start: number;
+  end: number;
+}
+
 interface DreamSymbolsResponse {
   mainSymbols: Array<{
     symbol: string;
     briefDescription: string;
   }>;
+  symbolPositions?: SymbolPosition[];
 }
 
 // Estrae i simboli principali dal testo del sogno
-export async function extractDreamSymbols(dreamText: string): Promise<DreamSymbolsResponse> {
+export async function extractDreamSymbols(dreamText: string, includePositions: boolean = false): Promise<DreamSymbolsResponse> {
   try {
     if (!process.env.GEMINI_API_KEY) {
       console.log('GEMINI_API_KEY non trovata, utilizzo dati di fallback');
@@ -62,6 +69,13 @@ export async function extractDreamSymbols(dreamText: string): Promise<DreamSymbo
       }
       
       const parsedResponse = JSON.parse(jsonMatch[0]) as DreamSymbolsResponse;
+      
+      // Se richiesto, aggiungi le posizioni dei simboli nel testo
+      if (includePositions && parsedResponse.mainSymbols && parsedResponse.mainSymbols.length > 0) {
+        const positions = findSymbolPositions(dreamText, parsedResponse.mainSymbols);
+        parsedResponse.symbolPositions = positions;
+      }
+      
       return parsedResponse;
     } catch (apiError) {
       // Se l'API fallisce (es. quota superata), utilizza i dati di fallback
@@ -218,6 +232,48 @@ function editDistance(s1: string, s2: string): number {
     }
   }
   return costs[s2.length];
+}
+
+// Trova le posizioni di ogni simbolo nel testo
+function findSymbolPositions(text: string, symbols: Array<{symbol: string; briefDescription: string}>): SymbolPosition[] {
+  const positions: SymbolPosition[] = [];
+  const lowerText = text.toLowerCase();
+  
+  symbols.forEach(symbolObj => {
+    const symbolLower = symbolObj.symbol.toLowerCase();
+    let startPos = 0;
+    
+    // Per ogni simbolo, trova tutte le occorrenze
+    while (startPos < lowerText.length) {
+      const foundIndex = lowerText.indexOf(symbolLower, startPos);
+      if (foundIndex === -1) break;
+      
+      // Verifica che l'occorrenza sia una parola completa
+      const prevChar = foundIndex > 0 ? lowerText[foundIndex - 1] : ' ';
+      const nextChar = foundIndex + symbolLower.length < lowerText.length 
+        ? lowerText[foundIndex + symbolLower.length] 
+        : ' ';
+      
+      const isPrevBoundary = /[\s.,;:!?\"'()[\]{}]/.test(prevChar);
+      const isNextBoundary = /[\s.,;:!?\"'()[\]{}]/.test(nextChar);
+      
+      if (isPrevBoundary && isNextBoundary) {
+        // Usa il testo originale per preservare la formattazione esatta
+        const originalSymbol = text.substring(foundIndex, foundIndex + symbolObj.symbol.length);
+        
+        positions.push({
+          symbol: symbolObj.symbol,
+          start: foundIndex,
+          end: foundIndex + symbolObj.symbol.length
+        });
+      }
+      
+      startPos = foundIndex + 1;
+    }
+  });
+  
+  // Ordina le posizioni per inizio
+  return positions.sort((a, b) => a.start - b.start);
 }
 
 // Lista di categorie comuni per i simboli nei sogni
