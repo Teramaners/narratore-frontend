@@ -1,0 +1,84 @@
+
+    <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        
+        <filter id="displacementFilter">
+          <feTurbulence type="turbulence" baseFrequency="0.01" numOctaves="3" result="turbulence"/>
+          <feDisplacementMap in2="turbulence" in="SourceGraphic" scale="25" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+        <filter id="grainEffect">
+          <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+          <feColorMatrix type="matrix" values="0 0 0 0 0, 0 0 0 0 0, 0 0 0 0 0, 0 0 0 0.5 0"/>
+          <feComposite operator="in" in2="SourceGraphic"/>
+          <feComposite operator="arithmetic" k1="0" k2="1" k3="0" k4="0" in2="SourceGraphic"/> 
+        </filter>
+        <radialGradient id="surreal-gradient" cx="50%" cy="50%" r="100%" fx="50%" fy="50%">
+          <stop offset="0%" stop-color="hsl(356, 100%, 60%)" stop-opacity="0.8"/>
+          <stop offset="50%" stop-color="hsl(334, 55%, 43%)" stop-opacity="0.5"/>
+          <stop offset="100%" stop-color="hsl(236, 94%, 25%)" stop-opacity="1"/>
+        </radialGradient>
+      
+      </defs>
+      <rect width="100%" height="100%" fill="url(#surreal-gradient)" />
+
+            <g transform="translate(261, 243)" filter="url(#softGlow)">
+              <ellipse cx="0" cy="0" rx="24" ry="14.399999999999999" fill="white" />
+              <circle cx="0" cy="0" r="9.600000000000001" fill="hsl(116, 100%, 55%)" />
+              <circle cx="0" cy="0" r="4.800000000000001" fill="black" />
+              <circle cx="3.5999999999999996" cy="-3.5999999999999996" r="1.2000000000000002" fill="white" />
+            </g>
+          
+
+            <g transform="translate(155, 118)" filter="url(#softGlow)">
+              <ellipse cx="0" cy="0" rx="12" ry="7.199999999999999" fill="white" />
+              <circle cx="0" cy="0" r="4.800000000000001" fill="hsl(116, 100%, 55%)" />
+              <circle cx="0" cy="0" r="2.4000000000000004" fill="black" />
+              <circle cx="1.7999999999999998" cy="-1.7999999999999998" r="0.6000000000000001" fill="white" />
+            </g>
+          
+
+            <g transform="translate(234, 218)" filter="url(#softGlow)">
+              <ellipse cx="0" cy="0" rx="23" ry="13.799999999999999" fill="white" />
+              <circle cx="0" cy="0" r="9.200000000000001" fill="hsl(116, 100%, 55%)" />
+              <circle cx="0" cy="0" r="4.6000000000000005" fill="black" />
+              <circle cx="3.4499999999999997" cy="-3.4499999999999997" r="1.1500000000000001" fill="white" />
+            </g>
+          
+
+            <polygon points="238,291 316,330 238,369 160,330" 
+                    fill="hsl(356, 100%, 60%)" opacity="0.7" filter="url(#displacementFilter)" />
+          
+
+            <polygon points="176,111 207,126.5 176,142 145,126.5" 
+                    fill="hsl(356, 100%, 60%)" opacity="0.7" filter="url(#displacementFilter)" />
+          
+
+          <g transform="translate(193, 109) rotate(15)" filter="url(#displacementFilter)">
+            <ellipse cx="0" cy="0" rx="43" ry="64.5" fill="hsl(334, 85%, 63%)" 
+                    stroke="black" stroke-width="2" opacity="0.9" />
+            <line x1="0" y1="-21.5" x2="0" y2="8.6" stroke="black" stroke-width="2" />
+            <line x1="-17.2" y1="0" x2="8.6" y2="0" stroke="black" stroke-width="2" />
+          </g>
+        
+
+        <g opacity="0.2" filter="url(#grainEffect)">
+          <rect width="100%" height="100%" fill="none" stroke="hsl(116, 100%, 55%)" stroke-width="5" />
+          <circle cx="200" cy="200" r="150" fill="none" stroke="hsl(356, 100%, 60%)" stroke-width="3" stroke-dasharray="10,10" />
+        </g>
+      
+
+        <path d="M 0,300 C 100,280 300,320 400,300" stroke="hsl(116, 100%, 55%)" stroke-width="2" fill="none" />
+        <path d="M 0,300 C 100,320 300,280 400,300 L 400,400 L 0,400 Z" fill="hsl(116, 100%, 55%)" opacity="0.3" />
+      
+
+        <text x="50%" y="95%" font-family="cursive" font-size="14" fill="rgba(255, 255, 255, 0.9)" 
+              text-anchor="middle" font-style="italic" filter="url(#softGlow)">
+          Sogno Surrealista
+        </text>
+      
+    </svg>
+  
