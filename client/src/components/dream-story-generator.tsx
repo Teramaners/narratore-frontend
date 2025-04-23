@@ -35,14 +35,28 @@ export function DreamStoryGenerator({ dreamContent, onStoryGenerated }: DreamSto
       try {
         const response = await apiRequest("GET", "/api/stili-letterari");
         const styles = await response.json();
-        setLiteraryStyles(styles);
+        if (Array.isArray(styles) && styles.length > 0) {
+          setLiteraryStyles(styles);
+        } else {
+          // Stili letterari di fallback se l'API non restituisce dati validi
+          setLiteraryStyles([
+            { id: "surrealista", name: "Surrealista", description: "Narrativa onirica con elementi fantastici" },
+            { id: "romantico", name: "Romantico", description: "Storie emozionali e sentimentali" },
+            { id: "gotico", name: "Gotico", description: "Atmosfere cupe e misteriose" },
+            { id: "fiabesco", name: "Fiabesco", description: "Racconti magici e incantati" },
+            { id: "minimalista", name: "Minimalista", description: "Stile essenziale e diretto" }
+          ]);
+        }
       } catch (error) {
         console.error("Errore nel caricamento degli stili letterari:", error);
-        toast({
-          variant: "destructive",
-          title: "Errore",
-          description: "Impossibile caricare gli stili letterari."
-        });
+        // Stili letterari di fallback in caso di errore
+        setLiteraryStyles([
+          { id: "surrealista", name: "Surrealista", description: "Narrativa onirica con elementi fantastici" },
+          { id: "romantico", name: "Romantico", description: "Storie emozionali e sentimentali" },
+          { id: "gotico", name: "Gotico", description: "Atmosfere cupe e misteriose" },
+          { id: "fiabesco", name: "Fiabesco", description: "Racconti magici e incantati" },
+          { id: "minimalista", name: "Minimalista", description: "Stile essenziale e diretto" }
+        ]);
       } finally {
         setStylesLoading(false);
       }

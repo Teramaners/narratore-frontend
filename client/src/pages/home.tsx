@@ -156,30 +156,43 @@ export default function Home() {
       const storiaGenerata = dataStory.story || dataStory.racconto;
       setRacconto(storiaGenerata); // Supporta entrambi i formati di risposta
 
-      // Richiesta per generare le emoji (non blocchiamo il flusso principale se fallisce)
-      let emojiGenerata = "";
-      try {
-        const responseEmoji = await apiRequest("POST", "/api/genera-emoji", { sogno });
-        const dataEmoji = await responseEmoji.json();
-        
-        if (!dataEmoji.error && dataEmoji.emojiTranslation) {
-          emojiGenerata = dataEmoji.emojiTranslation;
-          setEmojiTranslation(emojiGenerata);
-        }
-      } catch (emojiError) {
-        console.error("Errore nella generazione delle emoji:", emojiError);
-        // Non blocchiamo il flusso principale se la generazione delle emoji fallisce
-      }
-
-      // Salva il sogno, la storia e le emoji nel database
+      // Salviamo prima il sogno di base per evitare la schermata nera
       await saveDreamMutation.mutateAsync({
         testo: sogno,
         racconto: storiaGenerata,
         categoria: categoria,
         emozione: emozione,
-        preferito: preferito,
-        emojiTranslation: emojiGenerata
+        preferito: preferito
       });
+
+      // Ora proviamo a generare le emoji (non blocchiamo il flusso principale se fallisce)
+      try {
+        const responseEmoji = await apiRequest("POST", "/api/genera-emoji", { sogno });
+        const dataEmoji = await responseEmoji.json();
+        
+        if (!dataEmoji.error && dataEmoji.emojiTranslation) {
+          const emojiGenerata = dataEmoji.emojiTranslation;
+          setEmojiTranslation(emojiGenerata);
+          
+          // Aggiorniamo il sogno con le emoji
+          const savedDreams = await refetchSogni();
+          if (savedDreams && savedDreams.length > 0) {
+            const lastDreamId = savedDreams[0].id;
+            await saveDreamMutation.mutateAsync({
+              id: lastDreamId,
+              testo: sogno,
+              racconto: storiaGenerata,
+              categoria: categoria,
+              emozione: emozione,
+              preferito: preferito,
+              emojiTranslation: emojiGenerata
+            });
+          }
+        }
+      } catch (emojiError) {
+        console.error("Errore nella generazione delle emoji:", emojiError);
+        // Non blocchiamo il flusso principale se la generazione delle emoji fallisce
+      }
       
       // Ricarica la lista dei sogni
       refetchSogni();
@@ -313,26 +326,7 @@ export default function Home() {
                     // Gestisce la generazione delle emoji dopo la storia (stesso comportamento di inviaSogno)
                     const generateEmojis = async () => {
                       try {
-                        const responseEmoji = await apiRequest("POST", "/api/genera-emoji", { sogno });
-                        const dataEmoji = await responseEmoji.json();
-                        
-                        if (!dataEmoji.error && dataEmoji.emojiTranslation) {
-                          const emojiGenerata = dataEmoji.emojiTranslation;
-                          setEmojiTranslation(emojiGenerata);
-                          
-                          // Salva il sogno con tutti i dati
-                          await saveDreamMutation.mutateAsync({
-                            testo: sogno,
-                            racconto: story,
-                            categoria: categoria,
-                            emozione: emozione,
-                            preferito: preferito,
-                            emojiTranslation: emojiGenerata
-                          });
-                        }
-                      } catch (emojiError) {
-                        console.error("Errore nella generazione delle emoji:", emojiError);
-                        // Salva comunque il sogno anche senza emoji
+                        // Prima salva il sogno di base per evitare la schermata nera in caso di errore
                         await saveDreamMutation.mutateAsync({
                           testo: sogno,
                           racconto: story,
@@ -340,10 +334,46 @@ export default function Home() {
                           emozione: emozione,
                           preferito: preferito
                         });
+                        
+                        // Poi prova a generare e aggiornare le emoji
+                        try {
+                          const responseEmoji = await apiRequest("POST", "/api/genera-emoji", { sogno });
+                          const dataEmoji = await responseEmoji.json();
+                          
+                          if (!dataEmoji.error && dataEmoji.emojiTranslation) {
+                            const emojiGenerata = dataEmoji.emojiTranslation;
+                            setEmojiTranslation(emojiGenerata);
+                            
+                            // Aggiorna il sogno con le emoji
+                            const savedDreams = await refetchSogni();
+                            if (savedDreams && savedDreams.length > 0) {
+                              const lastDreamId = savedDreams[0].id;
+                              await saveDreamMutation.mutateAsync({
+                                id: lastDreamId,
+                                testo: sogno,
+                                racconto: story,
+                                categoria: categoria,
+                                emozione: emozione,
+                                preferito: preferito,
+                                emojiTranslation: emojiGenerata
+                              });
+                            }
+                          }
+                        } catch (emojiError) {
+                          console.error("Errore nella generazione delle emoji:", emojiError);
+                          // Continua il flusso normalmente, abbiamo già salvato il sogno di base
+                        }
+                      } catch (error) {
+                        console.error("Errore nel salvataggio del sogno:", error);
+                        toast({
+                          variant: 'destructive',
+                          title: "Errore",
+                          description: "Impossibile salvare il sogno. Riprova più tardi."
+                        });
+                      } finally {
+                        // Ricarica la lista dei sogni
+                        refetchSogni();
                       }
-                      
-                      // Ricarica la lista dei sogni
-                      refetchSogni();
                     };
                     
                     generateEmojis();
