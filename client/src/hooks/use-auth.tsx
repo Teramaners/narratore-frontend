@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useEffect } from "react";
 import {
   useQuery,
   useMutation,
@@ -20,23 +20,44 @@ type AuthContextType = {
 type LoginData = Pick<InsertUser, "username" | "password">;
 
 export const AuthContext = createContext<AuthContextType | null>(null);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  
+  // Gestisce la query di autenticazione con maggiore tolleranza per gli errori
   const {
     data: user,
     error,
     isLoading,
+    refetch: refetchUser
   } = useQuery<SelectUser | null, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    retry: 2, // Ritenta la query in caso di errore
+    retryDelay: 1000, // Ritarda il retry di 1 secondo
   });
+
+  // Logga lo stato di autenticazione per debug
+  useEffect(() => {
+    console.log("Auth state changed:", { 
+      user: user?.username || null, 
+      isLoading, 
+      hasError: !!error 
+    });
+    
+    if (error) {
+      console.error("Auth error:", error);
+    }
+  }, [user, isLoading, error]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
+      console.log("Tentativo di login per:", credentials.username);
       const res = await apiRequest("POST", "/api/login", credentials);
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
+      console.log("Login effettuato con successo:", user.username);
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Login effettuato",
@@ -44,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error("Errore durante il login:", error);
       toast({
         title: "Errore di login",
         description: error.message || "Credenziali non valide",
@@ -54,10 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
+      console.log("Tentativo di registrazione per:", credentials.username);
       const res = await apiRequest("POST", "/api/register", credentials);
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
+      console.log("Registrazione completata con successo:", user.username);
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Registrazione completata",
@@ -65,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error("Errore durante la registrazione:", error);
       toast({
         title: "Errore di registrazione",
         description: error.message || "Impossibile creare l'account",
@@ -75,9 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      console.log("Tentativo di logout");
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
+      console.log("Logout effettuato con successo");
       queryClient.setQueryData(["/api/user"], null);
       toast({
         title: "Logout effettuato",
@@ -85,11 +112,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error("Errore durante il logout:", error);
       toast({
         title: "Errore di logout",
         description: error.message,
         variant: "destructive",
       });
+      
+      // Forza il reset dell'auth state anche in caso di errore
+      queryClient.setQueryData(["/api/user"], null);
     },
   });
 

@@ -11,17 +11,10 @@ export function ProtectedRoute({
 }) {
   const { user, isLoading } = useAuth();
 
-  if (isLoading) {
-    return (
-      <Route path={path}>
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-border" />
-        </div>
-      </Route>
-    );
-  }
-
-  if (!user) {
+  // Non abbiamo più bisogno di mostrare il caricamento qui
+  // perché lo gestiamo già nel componente Router principale
+  
+  if (!user && !isLoading) {
     return (
       <Route path={path}>
         <Redirect to="/auth" />
@@ -29,5 +22,16 @@ export function ProtectedRoute({
     );
   }
 
-  return <Route path={path} component={Component} />;
+  return (
+    <Route path={path}>
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-lg">Caricamento...</span>
+        </div>
+      ) : (
+        <Component />
+      )}
+    </Route>
+  );
 }

@@ -3,15 +3,19 @@ import { useLocation } from "wouter";
 import { LoginForm } from "@/components/login-form";
 import { RegisterForm } from "@/components/register-form";
 import { useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [, setLocation] = useLocation();
   const { user, isLoading } = useAuth();
 
+  console.log("Auth Page - Auth state:", { user, isLoading });
+
   // Reindirizza alla home se l'utente è già autenticato
   useEffect(() => {
     if (user && !isLoading) {
+      console.log("Utente autenticato, redirect a home");
       setLocation("/");
     }
   }, [user, isLoading, setLocation]);
@@ -20,7 +24,8 @@ export default function AuthPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-lg">Caricamento autenticazione...</span>
       </div>
     );
   }
