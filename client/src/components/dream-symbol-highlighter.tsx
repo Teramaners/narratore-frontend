@@ -135,7 +135,7 @@ export function DreamSymbolHighlighter({
     <div className={className}>
       {segments.map((segment, index) => {
         if (!segment.isSymbol) {
-          return <Fragment key={index}>{segment.text}</Fragment>;
+          return <span key={index.toString()}>{segment.text}</span>;
         }
         
         const symbolData = segment.symbol 
@@ -162,7 +162,7 @@ export function DreamSymbolHighlighter({
 
         return (
           <DreamSymbolHoverCard
-            key={index}
+            key={index.toString()}
             symbol={segment.symbol || ""}
             briefDescription={segment.briefDescription || ""}
             className="text-primary-600 hover:text-primary transition-colors cursor-pointer"
