@@ -175,11 +175,14 @@ export default function Home() {
           setEmojiTranslation(emojiGenerata);
           
           // Aggiorniamo il sogno con le emoji
-          const savedDreams = await refetchSogni();
-          if (savedDreams && savedDreams.length > 0) {
-            const lastDreamId = savedDreams[0].id;
+          await refetchSogni();
+          // Cerchiamo il sogno appena creato
+          const currentDream = sogniSalvati.find((d: any) => 
+            d.content === sogno && d.story === storiaGenerata
+          );
+          if (currentDream && currentDream.id) {
             await saveDreamMutation.mutateAsync({
-              id: lastDreamId,
+              id: currentDream.id,
               testo: sogno,
               racconto: storiaGenerata,
               categoria: categoria,
@@ -345,11 +348,16 @@ export default function Home() {
                             setEmojiTranslation(emojiGenerata);
                             
                             // Aggiorna il sogno con le emoji
-                            const savedDreams = await refetchSogni();
-                            if (savedDreams && savedDreams.length > 0) {
-                              const lastDreamId = savedDreams[0].id;
+                            await refetchSogni();
+                            
+                            // Cerchiamo il sogno appena creato
+                            const dreamToUpdate = sogniSalvati.find((d: any) => 
+                              d.content === sogno && d.story === story
+                            );
+                          
+                            if (dreamToUpdate && dreamToUpdate.id) {
                               await saveDreamMutation.mutateAsync({
-                                id: lastDreamId,
+                                id: dreamToUpdate.id,
                                 testo: sogno,
                                 racconto: story,
                                 categoria: categoria,
