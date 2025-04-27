@@ -145,27 +145,53 @@ export default function Home() {
     setError("");
 
     try {
-      // Richiesta per generare il racconto
-      const responseStory = await apiRequest("POST", "/api/genera-racconto", { sogno });
-      const dataStory = await responseStory.json();
+      // 1. Richiesta per generare il racconto con gestione errori migliorata
+      let storiaGenerata = "";
+      try {
+        const responseStory = await apiRequest("POST", "/api/genera-racconto", { sogno });
+        const dataStory = await responseStory.json();
 
-      if (dataStory.error) {
-        throw new Error(dataStory.error);
+        if (dataStory.error) {
+          throw new Error(dataStory.error);
+        }
+
+        storiaGenerata = dataStory.story || dataStory.racconto || "";
+        if (!storiaGenerata) {
+          throw new Error("La risposta del server non contiene una storia generata");
+        }
+        setRacconto(storiaGenerata); // Supporta entrambi i formati di risposta
+      } catch (storyError) {
+        console.error("Errore nella generazione della storia:", storyError);
+        // Usa una storia di fallback se la generazione fallisce
+        storiaGenerata = `Non sono riuscito a interpretare completamente il tuo sogno a causa di un errore tecnico. Ecco una breve riflessione: "${sogno}" è un'esperienza interessante che merita di essere esplorata ulteriormente.`;
+        setRacconto(storiaGenerata);
+        toast({
+          variant: 'destructive',
+          title: "Errore nella generazione della storia",
+          description: "È stato usato un testo alternativo. Riprova più tardi."
+        });
       }
 
-      const storiaGenerata = dataStory.story || dataStory.racconto;
-      setRacconto(storiaGenerata); // Supporta entrambi i formati di risposta
+      // 2. Salviamo il sogno di base (con gestione errori migliorata)
+      try {
+        await saveDreamMutation.mutateAsync({
+          testo: sogno,
+          racconto: storiaGenerata,
+          categoria: categoria,
+          emozione: emozione,
+          preferito: preferito
+        });
+      } catch (saveError) {
+        console.error("Errore nel salvataggio del sogno:", saveError);
+        toast({
+          variant: 'destructive',
+          title: "Errore nel salvataggio",
+          description: "Impossibile salvare il sogno. Riprova più tardi."
+        });
+        throw saveError; // Interrompi il flusso se il salvataggio fallisce
+      }
 
-      // Salviamo prima il sogno di base per evitare la schermata nera
-      await saveDreamMutation.mutateAsync({
-        testo: sogno,
-        racconto: storiaGenerata,
-        categoria: categoria,
-        emozione: emozione,
-        preferito: preferito
-      });
-
-      // Ora proviamo a generare le emoji (non blocchiamo il flusso principale se fallisce)
+      // 3. Proviamo a generare le emoji (non blocchiamo il flusso principale se fallisce)
       try {
         const responseEmoji = await apiRequest("POST", "/api/genera-emoji", { sogno });
         const dataEmoji = await responseEmoji.json();

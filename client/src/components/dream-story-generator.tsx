@@ -78,26 +78,45 @@ export function DreamStoryGenerator({ dreamContent, onStoryGenerated }: DreamSto
     setLoading(true);
 
     try {
-      const response = await apiRequest("POST", "/api/genera-racconto", {
-        sogno: dreamContent,
-        stile: selectedStyle,
-        lunghezza: selectedLength,
-        tono: selectedTone,
-        includiTitolo: includeTitle
-      });
-      
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.error);
+      try {
+        const response = await apiRequest("POST", "/api/genera-racconto", {
+          sogno: dreamContent,
+          stile: selectedStyle,
+          lunghezza: selectedLength,
+          tono: selectedTone,
+          includiTitolo: includeTitle
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
+        if (!data.racconto) {
+          throw new Error("Nessuna storia restituita dal server");
+        }
+        
+        onStoryGenerated(data.racconto, data.titolo);
+        
+        toast({
+          title: "Storia generata",
+          description: "La tua storia è stata generata con successo."
+        });
+      } catch (apiError) {
+        console.error("Errore nella generazione della storia:", apiError);
+        
+        // Usa una storia di fallback
+        const storyFallback = `Non sono riuscito a interpretare completamente il tuo sogno a causa di un errore tecnico. Ecco una breve riflessione: "${dreamContent}" è un'esperienza interessante che merita di essere esplorata ulteriormente.`;
+        
+        onStoryGenerated(storyFallback, "Sogno senza interpretazione");
+        
+        toast({
+          variant: "destructive",
+          title: "Errore nella generazione",
+          description: "È stato usato un testo alternativo. Riprova più tardi."
+        });
       }
-      
-      onStoryGenerated(data.racconto, data.titolo);
-      
-      toast({
-        title: "Storia generata",
-        description: "La tua storia è stata generata con successo."
-      });
     } catch (error) {
       console.error("Errore nella generazione della storia:", error);
       toast({
