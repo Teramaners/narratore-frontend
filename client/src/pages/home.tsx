@@ -175,9 +175,11 @@ export default function Home() {
           setEmojiTranslation(emojiGenerata);
           
           // Aggiorniamo il sogno con le emoji
-          await refetchSogni();
-          // Cerchiamo il sogno appena creato
-          const currentDream = sogniSalvati.find((d: any) => 
+          const updatedSogni = await refetchSogni();
+          // Troviamo il sogno appena creato
+          // Se refetchSogni() restituisce un array, lo utilizziamo, altrimenti usiamo sogniSalvati attuale
+          const sogniList = Array.isArray(updatedSogni?.data) ? updatedSogni.data : sogniSalvati;
+          const currentDream = sogniList.find((d: any) => 
             d.content === sogno && d.story === storiaGenerata
           );
           if (currentDream && currentDream.id) {
@@ -348,10 +350,12 @@ export default function Home() {
                             setEmojiTranslation(emojiGenerata);
                             
                             // Aggiorna il sogno con le emoji
-                            await refetchSogni();
+                            const updatedSogni = await refetchSogni();
                             
-                            // Cerchiamo il sogno appena creato
-                            const dreamToUpdate = sogniSalvati.find((d: any) => 
+                            // Troviamo il sogno appena creato
+                            // Se refetchSogni() restituisce un array, lo utilizziamo, altrimenti usiamo sogniSalvati attuale
+                            const sogniList = Array.isArray(updatedSogni?.data) ? updatedSogni.data : sogniSalvati;
+                            const dreamToUpdate = sogniList.find((d: any) => 
                               d.content === sogno && d.story === story
                             );
                           
