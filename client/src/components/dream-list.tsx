@@ -162,41 +162,13 @@ export function DreamList({ dreams, onDreamSelect, onDreamDelete }: DreamListPro
                     >
                       <Edit3 className="h-4 w-4" />
                     </Button>
-                    {/* Pulsante nascosto temporaneamente */}
-                    <div className="hidden">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-red-500"
-                        onClick={() => {
-                          // Controllo di sicurezza: verifichiamo che l'ID del sogno sia valido
-                          if (dream && dream.id) {
-                            onDreamDelete(dream.id);
-                          } else {
-                            console.error("Tentativo di eliminare un sogno con ID non valido");
-                            alert("Impossibile eliminare questo sogno. ID non valido.");
-                          }
-                        }}
-                        aria-label="Elimina sogno"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    {/* Nuovo pulsante che ricarica la pagina invece di eliminare */}
+                    {/* Il pulsante elimina è stato disabilitato temporaneamente per problemi di stabilità */}
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 text-red-500"
+                      className="h-8 w-8 p-0 text-gray-400" // Grigio per mostrare che è disabilitato
                       onClick={() => {
-                        if (confirm("Sei sicuro di voler rimuovere questo sogno? L'applicazione verrà ricaricata.")) {
-                          // Salviamo info sulla sessione in localStorage
-                          localStorage.setItem("last_action", "delete_dream");
-                          localStorage.setItem("delete_dream_id", dream.id?.toString() || "0");
-                          
-                          // Ricarica la pagina
-                          window.location.reload();
-                        }
+                        alert("L'eliminazione dei sogni è temporaneamente disabilitata per problemi tecnici. Riprova più tardi.");
                       }}
                       aria-label="Elimina sogno"
                     >
