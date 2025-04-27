@@ -258,7 +258,54 @@ export default function Home() {
   };
 
   const eliminaSogno = (id: number) => {
-    deleteDreamMutation.mutate(id);
+    try {
+      // Mostriamo un toast di conferma prima di procedere
+      if (confirm("Sei sicuro di voler eliminare questo sogno?")) {
+        // Copriamo il caso in cui id non sia definito
+        if (!id) {
+          console.error("ID sogno non valido per l'eliminazione");
+          toast({
+            variant: "destructive",
+            title: "Errore",
+            description: "Impossibile eliminare il sogno, ID non valido."
+          });
+          return;
+        }
+        
+        // Ricarichiamo la lista dopo aver eliminato
+        deleteDreamMutation.mutate(id, {
+          onSuccess: () => {
+            refetchSogni();
+            // Resettiamo il form se l'utente sta visualizzando il sogno che è stato eliminato
+            const dreamBeingDeleted = sogniSalvati.find((d: any) => d.id === id);
+            if (dreamBeingDeleted && 
+                ((dreamBeingDeleted.content === sogno && dreamBeingDeleted.story === racconto) ||
+                 (dreamBeingDeleted.testo === sogno && dreamBeingDeleted.racconto === racconto))) {
+              resetForm();
+            }
+            toast({
+              title: "Sogno eliminato",
+              description: "Il sogno è stato eliminato con successo"
+            });
+          },
+          onError: (error) => {
+            console.error("Errore nell'eliminazione del sogno:", error);
+            toast({
+              variant: "destructive",
+              title: "Errore",
+              description: "Impossibile eliminare il sogno. Riprova più tardi."
+            });
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Errore nell'eliminazione del sogno:", error);
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: "Si è verificato un errore durante l'eliminazione del sogno."
+      });
+    }
   };
   
   // Determina se mostrare il loading overlay

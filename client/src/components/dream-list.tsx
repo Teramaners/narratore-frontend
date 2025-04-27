@@ -166,7 +166,15 @@ export function DreamList({ dreams, onDreamSelect, onDreamDelete }: DreamListPro
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 text-red-500"
-                      onClick={() => onDreamDelete(dream.id)}
+                      onClick={() => {
+                        // Controllo di sicurezza: verifichiamo che l'ID del sogno sia valido
+                        if (dream && dream.id) {
+                          onDreamDelete(dream.id);
+                        } else {
+                          console.error("Tentativo di eliminare un sogno con ID non valido");
+                          alert("Impossibile eliminare questo sogno. ID non valido.");
+                        }
+                      }}
                       aria-label="Elimina sogno"
                     >
                       <Trash2 className="h-4 w-4" />
