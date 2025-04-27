@@ -8,6 +8,7 @@ import ChallengesPage from "@/pages/challenges-page";
 import NotFound from "@/pages/not-found";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
+import { ErrorBoundary } from "@/lib/error-boundary";
 
 function Router() {
   const { isLoading } = useAuth();
@@ -23,12 +24,27 @@ function Router() {
   }
   
   return (
-    <Switch>
-      <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/" component={Home} />
-      <ProtectedRoute path="/sfide" component={ChallengesPage} />
-      <Route component={NotFound} />
-    </Switch>
+    <ErrorBoundary
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-900 text-white">
+          <h1 className="text-2xl font-bold mb-4">Ops! Si è verificato un errore</h1>
+          <p className="mb-4 text-center">L'applicazione ha riscontrato un problema imprevisto.</p>
+          <button
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md"
+            onClick={() => window.location.href = "/"}
+          >
+            Torna alla home
+          </button>
+        </div>
+      }
+    >
+      <Switch>
+        <Route path="/auth" component={AuthPage} />
+        <ProtectedRoute path="/" component={Home} />
+        <ProtectedRoute path="/sfide" component={ChallengesPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </ErrorBoundary>
   );
 }
 
