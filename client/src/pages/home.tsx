@@ -114,15 +114,45 @@ export default function Home() {
   // Mutation per eliminare un sogno
   const deleteDreamMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest('DELETE', `/api/sogni/${id}`);
+      if (!id || isNaN(id) || id <= 0) {
+        console.error("ID sogno non valido:", id);
+        throw new Error("ID sogno non valido per l'eliminazione");
+      }
+      
+      try {
+        // Aggiunto timeout per evitare che la richiesta si blocchi
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondi di timeout
+        
+        const response = await fetch(`/api/sogni/${id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Errore dal server: ${response.status} ${errorText}`);
+        }
+        
+        return true;
+      } catch (error) {
+        console.error("Errore durante l'eliminazione:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/sogni'] });
       toast({
         description: 'Sogno eliminato con successo',
       });
+      // Reset del form dopo l'eliminazione per evitare problemi
+      resetForm();
     },
     onError: (err: any) => {
+      console.error("Errore nella mutation di eliminazione:", err);
       toast({
         variant: 'destructive',
         description: `Errore nell'eliminazione: ${err.message || 'Si è verificato un errore'}`,
@@ -283,54 +313,97 @@ export default function Home() {
     }
   };
 
-  const eliminaSogno = (id: number) => {
+  const eliminaSogno = async (id: number) => {
     try {
+      // Verifica preliminare dell'ID
+      if (!id || isNaN(id) || id <= 0) {
+        console.error("ID sogno non valido:", id);
+        toast({
+          variant: "destructive",
+          title: "Errore",
+          description: "Impossibile eliminare il sogno, ID non valido."
+        });
+        return;
+      }
+
       // Mostriamo un toast di conferma prima di procedere
       if (confirm("Sei sicuro di voler eliminare questo sogno?")) {
-        // Copriamo il caso in cui id non sia definito
-        if (!id) {
-          console.error("ID sogno non valido per l'eliminazione");
-          toast({
-            variant: "destructive",
-            title: "Errore",
-            description: "Impossibile eliminare il sogno, ID non valido."
+        try {
+          // Approccio diretto senza usare la mutation per evitare problemi
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondi di timeout
+          
+          // Prepariamo l'interfaccia utente immediatamente
+          // Reset preventivo del form se il sogno visualizzato è quello che stiamo eliminando
+          const dreamBeingDeleted = sogniSalvati.find((d: any) => d.id === id);
+          if (dreamBeingDeleted && 
+              ((dreamBeingDeleted.content === sogno && dreamBeingDeleted.story === racconto) ||
+                (dreamBeingDeleted.testo === sogno && dreamBeingDeleted.racconto === racconto))) {
+            resetForm();
+          }
+          
+          // Chiamata diretta all'API
+          const response = await fetch(`/api/sogni/${id}`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            signal: controller.signal
           });
-          return;
-        }
-        
-        // Ricarichiamo la lista dopo aver eliminato
-        deleteDreamMutation.mutate(id, {
-          onSuccess: () => {
-            refetchSogni();
-            // Resettiamo il form se l'utente sta visualizzando il sogno che è stato eliminato
-            const dreamBeingDeleted = sogniSalvati.find((d: any) => d.id === id);
-            if (dreamBeingDeleted && 
-                ((dreamBeingDeleted.content === sogno && dreamBeingDeleted.story === racconto) ||
-                 (dreamBeingDeleted.testo === sogno && dreamBeingDeleted.racconto === racconto))) {
-              resetForm();
-            }
-            toast({
-              title: "Sogno eliminato",
-              description: "Il sogno è stato eliminato con successo"
-            });
-          },
-          onError: (error) => {
-            console.error("Errore nell'eliminazione del sogno:", error);
+          
+          clearTimeout(timeoutId);
+          
+          // Ricarica i sogni e mostra notifica di successo
+          await refetchSogni();
+          toast({
+            title: "Sogno eliminato",
+            description: "Il sogno è stato eliminato con successo"
+          });
+        } catch (error) {
+          console.error("Errore durante l'eliminazione diretta:", error);
+          
+          // Fallback alla mutation come seconda opzione
+          toast({
+            variant: "warning",
+            title: "Tentativo alternativo",
+            description: "Sto tentando un altro metodo di eliminazione..."
+          });
+          
+          try {
+            await new Promise((resolve) => setTimeout(resolve, 500)); // Piccola pausa
+            await deleteDreamMutation.mutateAsync(id);
+            await refetchSogni();
+          } catch (mutationError) {
+            console.error("Anche il fallback è fallito:", mutationError);
             toast({
               variant: "destructive",
-              title: "Errore",
-              description: "Impossibile eliminare il sogno. Riprova più tardi."
+              title: "Errore di eliminazione",
+              description: "Impossibile eliminare il sogno. Ricarica la pagina e riprova."
             });
           }
-        });
+        }
       }
     } catch (error) {
-      console.error("Errore nell'eliminazione del sogno:", error);
+      console.error("Errore generale nell'eliminazione del sogno:", error);
       toast({
         variant: "destructive",
         title: "Errore",
         description: "Si è verificato un errore durante l'eliminazione del sogno."
       });
+      // Ricarica la pagina come ultima soluzione
+      toast({
+        variant: "warning", 
+        title: "Consiglio",
+        description: "Se il problema persiste, prova a ricaricare la pagina."
+      });
+    } finally {
+      // Assicura che la lista sia aggiornata in ogni caso
+      try {
+        await refetchSogni();
+      } catch (e) {
+        console.error("Errore nel refresh finale:", e);
+      }
     }
   };
   
