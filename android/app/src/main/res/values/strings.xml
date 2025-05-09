@@ -1,8 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Narratore di Sogni</string>
-    <string name="title_activity_main">Narratore di Sogni</string>
-    <string name="package_name">com.narratoredisogni.app</string>
-    <string name="custom_url_scheme">com.narratoredisogni.app</string>
-    <string name="app_description">Un\'app per trasformare i tuoi sogni in racconti letterari</string>
+    <string name="app_name">Narratore-di-sogni</string>
+    <string name="title_activity_main">Narratore-di-sogni</string>
+    <string name="package_name">com.domenicoattanasii.narratore</string>
+    <string name="custom_url_scheme">com.domenicoattanasii.narratore</string>
 </resources>

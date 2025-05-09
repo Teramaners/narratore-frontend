@@ -365,7 +365,7 @@ export default function Home() {
           
           // Fallback alla mutation come seconda opzione
           toast({
-            variant: "warning",
+            variant: "default",
             title: "Tentativo alternativo",
             description: "Sto tentando un altro metodo di eliminazione..."
           });
@@ -393,7 +393,7 @@ export default function Home() {
       });
       // Ricarica la pagina come ultima soluzione
       toast({
-        variant: "warning", 
+        variant: "default", 
         title: "Consiglio",
         description: "Se il problema persiste, prova a ricaricare la pagina."
       });
