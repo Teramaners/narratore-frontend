@@ -1,5 +1,4 @@
 "use strict";
-// server.ts
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -8,8 +7,7 @@ var express_1 = __importDefault(require("express"));
 var body_parser_1 = __importDefault(require("body-parser"));
 var app = (0, express_1.default)();
 var PORT = 3000;
-// Middleware
-app.use(body_parser_1.default.json()); // oppure puoi usare direttamente: app.use(express.json());
+app.use(body_parser_1.default.json());
 // Endpoint di registrazione
 app.post('/register', function (req, res) {
     var _a = req.body, username = _a.username, password = _a.password;
@@ -22,7 +20,10 @@ app.post('/login', function (req, res) {
     console.log('Login:', username, password);
     res.status(200).json({ message: 'Login effettuato con successo' });
 });
-// Avvio del server
+// Rotta di base per Render
+app.get('/', function (req, res) {
+    res.send('Benvenuto nel backend di Narratore di Sogni!');
+});
 app.listen(PORT, function () {
-    console.log("Server online su http://localhost:3000");
+    console.log("Server avviato su http://localhost:".concat(PORT));
 });
