@@ -24,5 +24,5 @@ app.post('/login', function (req, res) {
 });
 // Avvio del server
 app.listen(PORT, function () {
-    console.log("Server avviato su http://localhost:".concat(PORT));
+    console.log("Server online su http://localhost:3000");
 });
