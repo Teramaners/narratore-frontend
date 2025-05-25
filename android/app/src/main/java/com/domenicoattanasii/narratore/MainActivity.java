@@ -1,18 +1,20 @@
 package com.domenicoattanasii.narratore;
 
-import android.os.Bundle;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import androidx.appcompat.app.AppCompatActivity;
+import com.getcapacitor.BridgeActivity; // Importa la classe BridgeActivity di Capacitor
+import android.os.Bundle; // Lascia questo import
 
-public class MainActivity extends AppCompatActivity {
+// MODIFICA QUI: Estendi BridgeActivity invece di AppCompatActivity
+public class MainActivity extends BridgeActivity {
+    // Rimuovi completamente il metodo onCreate se non hai bisogno di logica Android nativa aggiuntiva.
+    // Capacitor gestirà automaticamente la creazione e il caricamento della WebView.
+
+    // Se hai bisogno di fare qualcosa all'avvio, puoi sovrascrivere onCreate,
+    // ma DEVI CHIAMARE super.onCreate(savedInstanceState); e NON ricreare una WebView manualmente.
+    /* Esempio se ti servisse onCreate:
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        WebView webView = new WebView(this);
-        setContentView(webView);
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.setWebViewClient(new WebViewClient());
-        webView.loadUrl("https://narratore-di-sogni-attanasiid.replit.app/auth");
+        super.onCreate(savedInstanceState); // <--- Chiamata OBBLIGATORIA
+        // Fai qui la tua logica nativa aggiuntiva, se ne hai bisogno
     }
+    */
 }

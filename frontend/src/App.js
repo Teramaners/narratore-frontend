@@ -9,12 +9,13 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // *** MODIFICA EFFETTUATA QUI ***
-    // L'indirizzo IP del tuo computer sulla rete locale
-    const backendIp = '192.168.210.107'; 
-    const url = isLogin 
-      ? `http://${backendIp}:3001/login` 
-      : `http://${backendIp}:3001/register`;
+
+    // *** MODIFICA DA FARE QUI ***
+    // Usa l'URL del tuo backend deployato su Render
+    const backendBaseUrl = 'https://narratore-backend.onrender.com';
+    const url = isLogin
+      ? `${backendBaseUrl}/login`
+      : `${backendBaseUrl}/register`;
     // ******************************
 
     const payload = isLogin
@@ -23,7 +24,7 @@ function App() {
 
     try {
       const res = await fetch(url, {
-        method: 'POST',
+        method: 'POST', // Questo è già corretto, ottimo!
         headers: {
           'Content-Type': 'application/json',
         },
