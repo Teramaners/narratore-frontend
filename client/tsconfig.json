@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    // ... altre impostazioni
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noImplicitAny": false // Lasciamo questo per ora per semplificare
+  }
+}

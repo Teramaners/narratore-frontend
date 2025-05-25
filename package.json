@@ -1,26 +1,28 @@
 {
   "name": "narratore-di-sogni",
   "version": "1.0.0",
-  "description": "App backend per Narratore di Sogni",
-  "main": "dist/index.js",
+  "description": "",
+  "main": "index.js",
+  "type": "module",  
   "scripts": {
-    "start": "node dist/index.js"
-  },
-  "dependencies": {
-    "@capacitor/android": "^7.2.0",
-    "@capacitor/cli": "^7.2.0",
-    "@capacitor/core": "^7.2.0",
-    "body-parser": "^2.2.0",
-    "cors": "^2.8.5",
-    "express": "^4.21.2"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.1",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.4.0"
+    "start": "node server.js",
+    "dev": "ts-node server.ts",
+    "build": "vite build"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^7.2.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^7.2.0"
+  },
+  "devDependencies": {
+    "@replit/vite-plugin-cartographer": "^0.2.5",
+    "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
+    "@replit/vite-plugin-shadcn-theme-json": "^0.0.4",
+    "@vitejs/plugin-react": "^4.5.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
 }

@@ -1,44 +1,36 @@
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 
 const app = express();
-const PORT = 3001; // oppure qualsiasi altra porta libera
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json()); // sostituisce body-parser.json()
 
-// Semplice endpoint di login
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-  
-  if (username === 'utente' && password === 'password123') {
-    res.json({ success: true, token: 'abc123' });
-  } else {
-    res.status(401).json({ success: false, message: 'Credenziali non valide' });
-  }
-});
-app.get('/', (req, res) => {
-  res.send('Il backend è attivo e funzionante!');
-});
-// Dati utenti di esempio (login semplificato)
+// Utente di esempio
 const utenti = [
   { email: 'utente@example.com', password: 'password123' }
 ];
 
-// API di login
+// Endpoint test
+app.get('/', (req, res) => {
+  res.send('✅ Il backend è attivo e funzionante!');
+});
+
+// Endpoint di login
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
 
   const utente = utenti.find(u => u.email === email && u.password === password);
 
   if (utente) {
-    res.json({ success: true, message: 'Login riuscito' });
+    res.status(200).json({ success: true, message: 'Login riuscito', token: 'abc123' });
   } else {
     res.status(401).json({ success: false, message: 'Email o password errati' });
   }
 });
 
+// Avvio del server
 app.listen(PORT, () => {
-  console.log(`API server in ascolto su http://localhost:${PORT}`);
+  console.log(`🟢 API server in ascolto su http://localhost:${PORT}`);
 });
