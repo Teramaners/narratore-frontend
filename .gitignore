@@ -1,6 +1,33 @@
+<<<<<<< HEAD
 node_modules
 # dist
 .DS_Store
 server/public
 vite.config.ts.*
 *.tar.gz
+=======
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+>>>>>>> db7c04cba147d03bde4bd27799e1529e59d49af4

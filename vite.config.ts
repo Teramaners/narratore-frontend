@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
@@ -69,3 +70,12 @@ export default defineConfig(async () => {
     }
   };
 });
+=======
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+})
+>>>>>>> db7c04cba147d03bde4bd27799e1529e59d49af4
