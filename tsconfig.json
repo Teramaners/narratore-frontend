@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "compilerOptions": {
     "target": "ES6",
     "module": "commonjs",
@@ -9,11 +8,3 @@
     "strict": true
   }
 }
-=======
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
-}
->>>>>>> db7c04cba147d03bde4bd27799e1529e59d49af4
