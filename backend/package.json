@@ -1,15 +1,15 @@
 {
-  "name": "narratore-backend",
-  "version": "1.0.0",
-  "main": "dist/server.js",
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "ts-node server.ts"
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "typescript": "^5.0.0",
-    "ts-node": "^10.0.0"
-  }
+  "dependencies": {
+    "@capacitor/android": "^7.2.0",
+    "@capacitor/cli": "^7.2.0",
+    "@capacitor/core": "^7.2.0"
+  },
+"scripts": {
+  "build": "tsc",
+  "start": "node dist/server.js",
+  "dev": "ts-node server.ts"
+}
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
 }
