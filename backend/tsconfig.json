@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
+    "target": "ES6",
+    "module": "CommonJS",
     "outDir": "dist",
-    "module": "commonjs",
-    "target": "es2017",
-    "esModuleInterop": true,
+    "rootDir": "./"
     "strict": true,
-    "skipLibCheck": true
+    "esModuleInterop": true,
+    "noImplicitAny": false
   },
-  "include": ["server.ts", "**/*.ts"]
+  "include": ["server.ts"]
 }
