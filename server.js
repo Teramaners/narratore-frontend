@@ -1,36 +1,38 @@
-// server.js
-const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
+import express from "express";
+import path from "path";
+import session from "express-session";
+import MemoryStore from "memorystore";
+import apiRoutes from "./shared/api/index.js";
+app.use("/api", apiRoutes);
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3001;
+const __dirname = path.resolve();
+const MemoryStoreInstance = MemoryStore(session);
 
-// Simula un database in memoria
-let users = [];
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(cors());
-app.use(bodyParser.json());
+app.use(
+  session({
+    secret: "super-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    store: new MemoryStoreInstance({ checkPeriod: 86400000 }),
+    cookie: { maxAge: 3600000 },
+  })
+);
 
-app.post("/register", (req, res) => {
-  const { username, password } = req.body;
-  if (users.find((u) => u.username === username)) {
-    return res.json({ message: "Utente già registrato." });
-  }
-  users.push({ username, password });
-  res.json({ message: "Registrazione completata." });
-});
+// API (opzionale)
+app.use("/api", apiRoutes);
 
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-  const user = users.find((u) => u.username === username && u.password === password);
-  if (user) {
-    res.json({ message: "Login riuscito!" });
-  } else {
-    res.json({ message: "Credenziali non valide." });
-  }
+// Serve frontend React
+app.use(express.static(path.join(__dirname, "dist/public")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist/public/index.html"));
 });
 
 app.listen(PORT, () => {
-  console.log(`Server in ascolto su http://localhost:${PORT}`);
+  console.log(`Server attivo su http://localhost:${PORT}`);
 });

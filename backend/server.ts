@@ -21,7 +21,6 @@ app.get('/api/messaggio', (req, res) => {
 // Rotta di login (POST)
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-
   // Validazione semplificata (sostituibile con DB reale)
   if (username === 'utente' && password === 'password123') {
     res.json({ success: true, token: 'fake-jwt-token', user: { username } });

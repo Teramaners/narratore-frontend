@@ -22,8 +22,8 @@ app.post('/login', (req, res) => {
 });
 // Rotta di base per Render
 app.get('/', (req, res) => {
-    res.send('Benvenuto nel backend di Narratore di Sogni!');
-});
-app.listen(PORT, () => {
-    console.log(`Server avviato su http://localhost:${PORT}`);
+    res.json({ success: true, user });
+    app.listen(PORT, () => {
+        console.log(`Server avviato su http://localhost:${PORT}`);
+    });
 });
