@@ -2,9 +2,16 @@ import express from 'express';
 import cors from 'cors';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// --- MODIFICA CHIAVE QUI PER CORS ---
+// È FONDAMENTALE specificare l'origine esatta del tuo frontend su Render.
+// Questo permette al tuo frontend (su un dominio diverso) di fare richieste al tuo backend.
+app.use(cors({
+  origin: 'https://narratore-frontend.onrender.com', // <--- QUESTO È IL TUO FRONTEND SU RENDER
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specifica i metodi HTTP che il frontend può usare
+  allowedHeaders: ['Content-Type', 'Authorization'], // Specifica gli header che il frontend può inviare
+}));
+
 app.use(express.json()); // Middleware per leggere il body delle richieste JSON
 
 // Utente di esempio (per ora un array in memoria, per un vero progetto useresti un Database)
@@ -52,7 +59,14 @@ app.post('/api/register', (req, res) => {
 });
 // --- FINE NUOVO ENDPOINT DI REGISTRAZIONE ---
 
+// --- MODIFICA CHIAVE QUI PER LA PORTA ---
+// Render assegna una porta tramite la variabile d'ambiente 'PORT'.
+// È essenziale che il tuo server ascolti su quella porta.
+const PORT = process.env.PORT || 3001; // Usa la porta di Render o 3001 per lo sviluppo locale
+
 // Avvio del server
 app.listen(PORT, () => {
-  console.log(`🟢 API server in ascolto su http://localhost:${PORT}`);
+  console.log(`🟢 API server in ascolto su porta ${PORT}`);
+  // Puoi aggiungere un log che mostri l'URL completo su Render per chiarezza
+  console.log(`Accessibile all'URL del backend: https://narratore-backend.onrender.com`);
 });
