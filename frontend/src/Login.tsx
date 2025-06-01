@@ -1,4 +1,3 @@
-// frontend/src/Login.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,11 +7,16 @@ const Login = () => {
   const [errore, setErrore] = useState('');
   const navigate = useNavigate();
 
+  // Utilizza la variabile d'ambiente VITE_BACKEND_URL.
+  // Se non definita (es. in sviluppo locale), userà 'http://localhost:3001'.
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrore('');
+    setErrore(''); // Resetta l'errore ad ogni tentativo di login.
     try {
-      const response = await fetch('https://narratore-backend.onrender.com/api/login', {
+      // Costruisce l'URL usando la variabile d'ambiente.
+      const response = await fetch(`${BACKEND_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -20,14 +24,17 @@ const Login = () => {
 
       const data = await response.json();
 
-      if (data.success) {
-        localStorage.setItem('token', data.token);
-        navigate('/home');
+      // Controlla il successo della risposta HTTP (status 2xx).
+      if (response.ok) {
+        localStorage.setItem('token', data.token); // Salva il token se il login ha successo.
+        navigate('/home'); // Reindirizza alla home page.
       } else {
-        setErrore('Credenziali non valide');
+        // Mostra un messaggio di errore dal backend o un messaggio generico.
+        setErrore(data.message || 'Credenziali non valide');
       }
     } catch (err) {
-      setErrore('Errore di rete');
+      console.error("Errore durante il login:", err); // Logga l'errore completo per il debug.
+      setErrore('Errore di rete. Impossibile connettersi al server.'); // Messaggio user-friendly.
     }
   };
 
